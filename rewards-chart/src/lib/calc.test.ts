@@ -17,7 +17,7 @@ const wedMorning = new Date('2025-11-11T20:40:00Z');
 const today = '2025-11-12';
 
 function data(partial: Partial<FamilyData>): FamilyData {
-  return { settings, kids: [kid], jobs, completions: [], bonusLogs: [], adjustments: [], payouts: [], ...partial };
+  return { settings, kids: [kid], jobs, completions: [], bonusLogs: [], adjustments: [], payouts: [], techSessions: [], ...partial };
 }
 
 function done(jobId: string, day: string, atUtc: string) {
@@ -227,5 +227,27 @@ describe("Bruno's tasks", () => {
       expect(kidsOnDuty(feed, d)[0]).not.toBe(kidsOnDuty(water, d)[0]);
       expect(kidsOnDuty(feed, d)[0]).not.toBe(kidsOnDuty(feed, addDays(d, 1))[0]);
     }
+  });
+});
+
+describe('weekend tech timer', () => {
+  const sat = new Date('2025-11-14T23:00:00Z'); // Sat 15 Nov 2025, 10am Melbourne
+  it('counts down from the weekly allowance and never overruns a session', () => {
+    const techSessions = [
+      { id: 's1', kid_id: 'k1', started_at: '2025-11-14T22:00:00Z', allowed_seconds: 30 * 60, ended_at: null }, // ran 60 min but only 30 allowed
+      { id: 's2', kid_id: 'k1', started_at: '2025-11-07T22:00:00Z', allowed_seconds: 3600, ended_at: '2025-11-07T23:00:00Z' }, // last week
+    ];
+    const s = summarizeKid(kid, data({ techSessions }), sat);
+    expect(s.tech.weekend).toBe(true);
+    expect(s.tech.usedSeconds).toBe(30 * 60);
+    expect(s.tech.remainingSeconds).toBe(210 * 60 - 30 * 60);
+    expect(s.tech.running).toBeNull(); // its allowed time is used up
+  });
+  it('shows a running timer and is not the weekend on school days', () => {
+    const techSessions = [{ id: 's1', kid_id: 'k1', started_at: '2025-11-14T22:50:00Z', allowed_seconds: 3600, ended_at: null }];
+    const s = summarizeKid(kid, data({ techSessions }), sat);
+    expect(s.tech.running?.id).toBe('s1');
+    expect(s.tech.remainingSeconds).toBe(210 * 60 - 600);
+    expect(summarizeKid(kid, data({}), wedMorning).tech.weekend).toBe(false);
   });
 });

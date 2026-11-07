@@ -51,13 +51,18 @@ interface IconProps {
   size?: number;
   strokeWidth?: number;
   className?: string;
+  filled?: boolean;
 }
 
-export function Icon({ d, name, size = 24, strokeWidth = 2, className }: IconProps) {
+export function Icon({ d, name, size = 24, strokeWidth = 2, className, filled }: IconProps) {
   const path = d ?? (name ? JOB_ICONS[name]?.d ?? JOB_ICONS.star.d : JOB_ICONS.star.d);
   return (
     <svg width={size} height={size} viewBox="0 0 24 24" aria-hidden="true" className={className}>
-      <path d={path} fill="none" stroke="currentColor" strokeWidth={strokeWidth} strokeLinecap="round" strokeLinejoin="round" />
+      {filled ? (
+        <path d={path} fill="currentColor" />
+      ) : (
+        <path d={path} fill="none" stroke="currentColor" strokeWidth={strokeWidth} strokeLinecap="round" strokeLinejoin="round" />
+      )}
     </svg>
   );
 }

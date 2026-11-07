@@ -1,5 +1,5 @@
 // All the game maths in one place, as plain functions so they can be tested.
-import type { Adjustment, BonusLog, Completion, FamilyData, Job, JobPeriod, Kid, Payout, Settings } from './types';
+import type { Adjustment, BonusLog, Completion, FamilyData, Job, JobPeriod, Kid, Payout, Settings, TechSession } from './types';
 import { addDays, localParts, timeToSeconds, weekStart, weekdayOf } from './time';
 
 export const STARS_PER_LEVEL = 150;
@@ -26,6 +26,17 @@ export interface TechState {
   total: number;
   takenReasons: Adjustment[];
   ban: TechBan | null; // "tech time dead"
+  weekend: boolean; // tech time can only be used on non-school days
+  usedSeconds: number; // timer time used this week
+  remainingSeconds: number; // what's left this week (0 while banned)
+  running: TechSession | null; // the timer that's counting down right now
+  sessionIds: string[]; // this week's timer sessions (parents can reset them)
+}
+
+/** Seconds a timer session has used, never more than it was allowed. */
+export function sessionSeconds(s: TechSession, now: Date): number {
+  const end = s.ended_at ? Date.parse(s.ended_at) : now.getTime();
+  return Math.max(0, Math.min(s.allowed_seconds, Math.floor((end - Date.parse(s.started_at)) / 1000)));
 }
 
 export interface TechBan {
@@ -297,14 +308,26 @@ export function summarizeKid(kid: Kid, data: FamilyData, now: Date): KidSummary 
   const techEarned = sum(weekLogs.filter((b) => b.status === 'approved').map((b) => b.tech_minutes));
   const techGiven = sum(weekTech.filter((a) => a.amount > 0).map((a) => Number(a.amount)));
   const techTaken = -sum(weekTech.filter((a) => a.amount < 0).map((a) => Number(a.amount)));
+  const ban = activeBan(kid, now);
+  const allowance = Math.max(0, kid.weekly_tech_minutes + techEarned + techGiven - techTaken);
+  const weekSessions = (data.techSessions ?? []).filter(
+    (t) => t.kid_id === kid.id && inWeek(localParts(new Date(t.started_at), settings.timezone).day, ws),
+  );
+  const usedSeconds = weekSessions.reduce((a, t) => a + sessionSeconds(t, now), 0);
+  const open = weekSessions.find((t) => !t.ended_at && sessionSeconds(t, now) < t.allowed_seconds) ?? null;
   const tech: TechState = {
     base: kid.weekly_tech_minutes,
     earned: techEarned,
     given: techGiven,
     taken: techTaken,
-    total: activeBan(kid, now) ? 0 : Math.max(0, kid.weekly_tech_minutes + techEarned + techGiven - techTaken),
+    total: ban ? 0 : allowance,
     takenReasons: weekTech.filter((a) => a.amount < 0),
-    ban: activeBan(kid, now),
+    ban,
+    weekend: !settings.school_days.includes(weekdayOf(today)),
+    usedSeconds,
+    remainingSeconds: ban ? 0 : Math.max(0, allowance * 60 - usedSeconds),
+    running: ban ? null : open,
+    sessionIds: weekSessions.map((t) => t.id),
   };
 
   const lifetimeStars = Math.max(

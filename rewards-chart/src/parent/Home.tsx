@@ -12,7 +12,7 @@ function when(iso: string): string {
 
 /** "Today": what needs a parent right now, and how each child is tracking. */
 export function ParentHome() {
-  const { data, loading, error, reviewBonus } = useFamily();
+  const { data, loading, error, reviewBonus, stopTech, resetTech } = useFamily();
   const now = useNow(30_000);
   const [busy, setBusy] = useState<string | null>(null);
   const [msg, setMsg] = useState<string | null>(null);
@@ -101,6 +101,48 @@ export function ParentHome() {
         <p className="p-label" style={{ textTransform: 'none', letterSpacing: 0, fontWeight: 600, textAlign: 'center' }}>
           Tap a child to give or take away
         </p>
+      </section>
+
+      <section className="p-section">
+        <h2>Tech time</h2>
+        <div className="p-list">
+          {summaries.map((s) => {
+            const t = s.tech;
+            const left = Math.floor(t.remainingSeconds / 60);
+            const status = t.ban
+              ? 'Tech time dead'
+              : t.running
+                ? `On now · ${Math.floor(t.remainingSeconds / 3600)}h ${String(Math.floor((t.remainingSeconds % 3600) / 60)).padStart(2, '0')}m left`
+                : `${left} min left this week${t.weekend ? '' : ' · weekends only'}`;
+            return (
+              <div key={s.kid.id} className="p-row" style={{ flexWrap: 'wrap' }}>
+                <KidDot name={s.kid.name} color={inkOf(s.kid.color)} />
+                <div className="grow">
+                  <div className="t">{s.kid.name}</div>
+                  <div className="m" style={t.running ? { color: '#2442d6', fontWeight: 700 } : undefined}>{status}</div>
+                </div>
+                {t.running && (
+                  <button className="p-btn" disabled={busy === `stop-${s.kid.id}`} onClick={async () => { setBusy(`stop-${s.kid.id}`); const e = await stopTech(s.kid.id); setBusy(null); setMsg(e); }}>
+                    Stop
+                  </button>
+                )}
+                <button
+                  className="p-btn"
+                  disabled={busy === `reset-${s.kid.id}` || t.usedSeconds === 0}
+                  onClick={async () => {
+                    if (!window.confirm(`Reset ${s.kid.name}'s tech time for this week? The timer goes back to the full ${t.total} minutes.`)) return;
+                    setBusy(`reset-${s.kid.id}`);
+                    const e = await resetTech(s.kid.id, t.sessionIds);
+                    setBusy(null);
+                    setMsg(e);
+                  }}
+                >
+                  Reset time
+                </button>
+              </div>
+            );
+          })}
+        </div>
       </section>
 
       {pending.length === 0 && owing.length === 0 && !loading && (

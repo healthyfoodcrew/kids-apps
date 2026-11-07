@@ -82,8 +82,8 @@ export function PlayerPick() {
                 </div>
                 <div className="bar"><div style={{ width: `${pct}%` }} /></div>
                 <div className="sub">
-                  <span>{s.allDone ? 'Play time unlocked!' : `Morning jobs ${s.doneCount}/${s.totalCount}`}</span>
-                  <span>{s.tech.ban ? 'Tech time dead' : `Tech ${s.tech.total} min`}</span>
+                  <span>{s.allDone ? (s.tech.weekend ? 'All jobs done!' : 'Play time unlocked!') : `Morning jobs ${s.doneCount}/${s.totalCount}`}</span>
+                  <span>{s.tech.ban ? 'Tech time dead' : s.tech.running ? 'Tech on now' : `Tech ${Math.floor(s.tech.remainingSeconds / 60)} min`}</span>
                 </div>
               </div>
               <div className="cta">PLAY AS {kid.name.toUpperCase()}</div>

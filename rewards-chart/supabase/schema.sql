@@ -389,3 +389,64 @@ do $$ begin
   alter table public.jobs add constraint jobs_category_check check (category in ('quest', 'pet'));
 exception when duplicate_object then null; end $$;
 alter table public.settings add column if not exists pet_name text not null default 'Bruno';
+
+-- ─────────────────────────────────────────────────────────────
+-- Weekend tech-time timer
+-- Each start/stop is a session; a session can never run longer than the minutes the
+-- child had left when it started, even if nobody presses pause.
+-- ─────────────────────────────────────────────────────────────
+create table if not exists public.tech_sessions (
+  id uuid primary key default gen_random_uuid(),
+  kid_id uuid not null references public.kids on delete cascade,
+  started_at timestamptz not null default now(),
+  allowed_seconds int not null check (allowed_seconds > 0),
+  ended_at timestamptz
+);
+create index if not exists tech_sessions_kid on public.tech_sessions (kid_id, started_at);
+create unique index if not exists tech_sessions_one_open on public.tech_sessions (kid_id) where ended_at is null;
+
+alter table public.tech_sessions enable row level security;
+drop policy if exists "members read" on public.tech_sessions;
+create policy "members read" on public.tech_sessions for select using (public.is_member());
+drop policy if exists "parents fix" on public.tech_sessions;
+create policy "parents fix" on public.tech_sessions for delete using (public.can_manage());
+
+-- Start: only on non-school days, never while banned, one timer at a time.
+create or replace function public.start_tech(p_kid uuid, p_seconds int) returns void
+language plpgsql security definer set search_path = public as $$
+declare
+  s public.settings;
+  k public.kids;
+  dow int;
+begin
+  if not public.is_member() then raise exception 'Not allowed'; end if;
+  select * into s from public.settings where id = 1;
+  select * into k from public.kids where id = p_kid;
+  if not found then raise exception 'Child not found'; end if;
+  dow := extract(isodow from (now() at time zone coalesce(s.timezone, 'Australia/Melbourne')))::int;
+  if dow = any (coalesce(s.school_days, '{1,2,3,4,5}')) then raise exception 'Tech time is for weekends only'; end if;
+  if k.tech_banned and (k.tech_ban_until is null or k.tech_ban_until > now()) then raise exception 'Tech time is banned'; end if;
+  if p_seconds is null or p_seconds <= 0 then raise exception 'No tech time left'; end if;
+  update public.tech_sessions set ended_at = started_at + make_interval(secs => allowed_seconds)
+    where kid_id = p_kid and ended_at is null and started_at + make_interval(secs => allowed_seconds) <= now();
+  insert into public.tech_sessions (kid_id, allowed_seconds) values (p_kid, least(p_seconds, 24 * 3600));
+end $$;
+
+-- Pause / stop: closes the open timer (never later than its allowed end).
+create or replace function public.stop_tech(p_kid uuid) returns void
+language plpgsql security definer set search_path = public as $$
+begin
+  if not public.is_member() then raise exception 'Not allowed'; end if;
+  update public.tech_sessions
+    set ended_at = least(now(), started_at + make_interval(secs => allowed_seconds))
+    where kid_id = p_kid and ended_at is null;
+end $$;
+
+revoke execute on function public.start_tech(uuid, int) from public, anon;
+revoke execute on function public.stop_tech(uuid) from public, anon;
+grant execute on function public.start_tech(uuid, int) to authenticated;
+grant execute on function public.stop_tech(uuid) to authenticated;
+
+do $$ begin
+  alter publication supabase_realtime add table public.tech_sessions;
+exception when duplicate_object or undefined_object then null; end $$;

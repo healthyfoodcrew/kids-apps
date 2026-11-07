@@ -93,6 +93,14 @@ export interface Payout {
   paid_at: string;
 }
 
+export interface TechSession {
+  id: string;
+  kid_id: string;
+  started_at: string;
+  allowed_seconds: number;
+  ended_at: string | null;
+}
+
 export interface FamilyData {
   settings: Settings;
   kids: Kid[];
@@ -101,6 +109,7 @@ export interface FamilyData {
   bonusLogs: BonusLog[];
   adjustments: Adjustment[];
   payouts: Payout[];
+  techSessions: TechSession[];
 }
 
 export const DEFAULT_SETTINGS: Settings = {

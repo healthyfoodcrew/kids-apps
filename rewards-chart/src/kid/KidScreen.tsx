@@ -5,13 +5,14 @@ import { Icon, UI_ICONS } from '../components/Icon';
 import { KidAvatar } from '../components/KidAvatar';
 import { summarizeKid, timerState } from '../lib/calc';
 import { useFamily, useNow } from '../lib/store';
-import { banEndText, formatMoneyShort, localParts } from '../lib/time';
+import { formatMoneyShort, localParts } from '../lib/time';
 import type { Job } from '../lib/types';
 import { Bone, Confetti, DogSitting, PawPrint, RewardTrack, TILE_COLORS, TimerCard } from './parts';
+import { TechCard } from './TechCard';
 
 export function KidScreen() {
   const { kidId } = useParams();
-  const { data, loading, toggleJob, logBonus, undoBonus } = useFamily();
+  const { data, loading, toggleJob, logBonus, undoBonus, startTech, stopTech } = useFamily();
   const now = useNow(1000);
   const [toast, setToast] = useState<string | null>(null);
   const [busy, setBusy] = useState<string | null>(null);
@@ -68,6 +69,14 @@ export function KidScreen() {
     const err = await logBonus(job, kid!.id);
     setBusy(null);
     setToast(err ?? `Nice one! +${job.stars} stars once Mum or Dad gives a thumbs up`);
+  }
+
+  async function techAction(op: () => Promise<string | null>) {
+    if (busy) return;
+    setBusy('tech');
+    const err = await op();
+    setBusy(null);
+    if (err) setToast(err);
   }
 
   async function tapUndo(id: string) {
@@ -145,21 +154,18 @@ export function KidScreen() {
 
         <section className="area-quests" aria-label="Today's quests">
           <div className="quests-head">
-            {period === 'morning' && s.allDone ? (
-              <div className="play-banner" role="status">
-                <Icon d={UI_ICONS.unlock} size={30} strokeWidth={2.4} />
-                <div>
-                  <div className="play-title">PLAY TIME UNLOCKED!</div>
-                  <div className="play-sub">All morning jobs done. Go outside and play!</div>
-                </div>
-              </div>
-            ) : (
-              <h2>{period === 'morning' ? 'MORNING QUESTS' : 'EVENING QUESTS'}</h2>
-            )}
+            <h2>{period === 'morning' ? 'MORNING QUESTS' : 'EVENING QUESTS'}</h2>
           </div>
           {shown.length === 0 ? (
             <div className="quests-empty">No {period} quests today. Enjoy!</div>
           ) : (
+            <div className={`quest-wrap${period === 'morning' && s.allDone ? ' stamped' : ''}`}>
+            {period === 'morning' && s.allDone && (
+              <div className="play-stamp" role="status">
+                <div className="big">{s.tech.weekend ? 'ALL DONE!' : 'PLAY TIME!'}</div>
+                <div className="small">{s.tech.weekend ? 'GREAT JOB · ENJOY YOUR DAY' : 'ALL JOBS DONE · GO PLAY'}</div>
+              </div>
+            )}
             <div className="quest-grid">
               {shown.map((t, i) => {
                 const tile = TILE_COLORS[i % TILE_COLORS.length];
@@ -184,44 +190,17 @@ export function KidScreen() {
                 );
               })}
             </div>
+            </div>
           )}
         </section>
 
-        {s.tech.ban ? (
-          <section className="panel tech dead area-tech" aria-label="Tech time banned">
-            <div className="row">
-              <span className="title"><Icon d={UI_ICONS.gamepad} size={26} strokeWidth={1.9} />TECH TIME</span>
-              <span className="status">BANNED</span>
-            </div>
-            <div className="dead-title">TECH TIME DEAD</div>
-            <div className="log">
-              <span className="until">Banned {banEndText(s.tech.ban.until, data.settings.timezone)}</span>
-              {s.tech.ban.reason && <span className="minus">Reason: {s.tech.ban.reason}</span>}
-            </div>
-          </section>
-        ) : (
-          <section className={`panel tech area-tech${s.allDone || s.totalCount === 0 ? ' open' : ''}`} aria-label="Tech time">
-          <div className="row">
-            <span className="title"><Icon d={UI_ICONS.gamepad} size={26} strokeWidth={1.9} />TECH TIME</span>
-            <span className="status">
-              {s.allDone || s.totalCount === 0 ? 'UNLOCKED' : `LOCKED · ${s.totalCount - s.doneCount} MORNING ${s.totalCount - s.doneCount === 1 ? 'JOB' : 'JOBS'}`}
-            </span>
-          </div>
-          <div className="mins"><span className="big">{s.tech.total}</span><span className="unit">MIN</span></div>
-            <div className="week">LEFT THIS WEEK</div>
-          <div className="log">
-            <span className="plus">
-              {s.tech.earned > 0
-                ? `+${s.tech.earned} min from bonus jobs`
-                : `+${data.settings.bonus_tech_minutes} min for each bonus job`}
-            </span>
-            {s.tech.given > 0 && <span className="plus">+{s.tech.given} min from Mum or Dad</span>}
-            {s.tech.takenReasons.slice(0, 2).map((a) => (
-              <span key={a.id} className="minus">−{Math.abs(a.amount)} min{a.reason ? `: ${a.reason}` : ''}</span>
-            ))}
-          </div>
-        </section>
-        )}
+        <TechCard
+          s={s}
+          settings={data.settings}
+          busy={busy === 'tech'}
+          onStart={() => techAction(() => startTech(kid.id, s.tech.remainingSeconds))}
+          onStop={() => techAction(() => stopTech(kid.id))}
+        />
 
         <section className={`pet area-pet${petDone ? ' done' : ''}`} aria-label={`${petName}'s task`}>
           <span className="pet-bone"><Bone size={64} /></span>
@@ -305,11 +284,13 @@ export function KidScreen() {
           <div className="celebrate" role="dialog" aria-modal="true" aria-label="Quests complete">
             <div className="card">
               <Icon d={UI_ICONS.unlock} size={64} />
-              <h2>PLAY TIME UNLOCKED!</h2>
+              <h2>{s.tech.weekend ? 'ALL DONE!' : 'PLAY TIME!'}</h2>
               <p>
                 {s.speedBonusToday
                   ? `Speed run! +${data.settings.speed_bonus_stars} bonus stars. Go outside and play!`
-                  : 'All morning jobs done. Go outside and play!'}
+                  : s.tech.weekend
+                    ? 'All morning jobs done. Tech time is ready!'
+                    : 'All morning jobs done. Go outside and play!'}
               </p>
               <button onClick={() => setCelebrate(false)}>LET'S GO!</button>
             </div>

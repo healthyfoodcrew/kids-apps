@@ -251,13 +251,42 @@ button:disabled { cursor: default; }
 .pet-btn:active { transform: translateY(3px); box-shadow: 0 1px 0 #C25A16; }
 .pet-btn.done { background: #3FBF4A; box-shadow: 0 4px 0 #23802B; }
 
-/* Play time banner */
-.play-banner {
-  flex: 1; display: flex; align-items: center; gap: 12px; padding: 10px 18px; border-radius: 18px;
-  background: var(--green); color: var(--green-ink); animation: pop 0.5s ease;
+/* Play time sticker over the finished quests */
+.quest-wrap { position: relative; }
+.quest-wrap.stamped .quest-grid { opacity: 0.45; }
+.play-stamp {
+  position: absolute; left: 50%; top: 50%; z-index: 2; pointer-events: none;
+  transform: translate(-50%, -50%) rotate(-6deg);
+  background: var(--gold); color: var(--ink); padding: 12px 32px; border-radius: 20px; border: 5px solid #fff;
+  box-shadow: 0 8px 0 var(--gold-shadow); text-align: center; white-space: nowrap; animation: stamp 0.45s ease;
 }
-.play-title { font-family: var(--display); font-size: 28px; line-height: 1; letter-spacing: 0.02em; }
-.play-sub { font-size: 14px; font-weight: 900; }
+.play-stamp .big { font-family: var(--display); font-size: 44px; line-height: 1; }
+.play-stamp .small { font-size: 15px; font-weight: 900; letter-spacing: 0.04em; }
+@keyframes stamp { 0% { transform: translate(-50%, -50%) rotate(-6deg) scale(1.8); opacity: 0; } 70% { transform: translate(-50%, -50%) rotate(-6deg) scale(0.95); opacity: 1; } 100% { transform: translate(-50%, -50%) rotate(-6deg) scale(1); } }
+
+/* Tech time states */
+.tech.t-locked { border: 3px dashed var(--edge); color: var(--muted); }
+.tech.t-locked .status { background: var(--panel-2); color: var(--muted); }
+.tech.t-locked .big { color: #fff; }
+.tech .note { font-size: 14px; font-weight: 900; }
+.tech.t-ready { border: 3px solid #4FB8FF; }
+.tech.t-ready .status { background: #4FB8FF; color: var(--ink); }
+.tech.t-paused { border: 3px solid var(--gold); }
+.tech.t-paused .status { background: var(--gold); color: var(--ink); }
+.tech.t-running { background: #4FB8FF; color: var(--ink); border: 3px solid #4FB8FF; }
+.tech.t-running .status { background: var(--ink); color: #4FB8FF; display: inline-flex; align-items: center; gap: 6px; }
+.live-dot { width: 8px; height: 8px; border-radius: 50%; background: #4FB8FF; animation: blink 1s infinite; }
+@keyframes blink { 50% { opacity: 0.2; } }
+.tech .countdown { font-family: var(--display); font-size: 52px; line-height: 1; font-variant-numeric: tabular-nums; }
+.t-btn {
+  margin-top: auto; min-height: 52px; border: 0; border-radius: 16px; display: flex; align-items: center; justify-content: center; gap: 10px;
+  font-family: var(--display); font-size: 22px; letter-spacing: 0.02em;
+}
+.t-btn.start { background: var(--green); color: var(--green-ink); box-shadow: 0 5px 0 #2f8f2f; }
+.t-btn.resume { background: var(--gold); color: var(--ink); box-shadow: 0 5px 0 var(--gold-shadow); }
+.t-btn.pause { background: var(--ink); color: #fff; }
+.t-btn.wait { background: var(--panel-2); color: var(--muted); font-size: 16px; }
+.t-btn:active:not(:disabled) { transform: translateY(3px); }
 
 /* Bonus */
 .bonus { display: flex; flex-direction: column; gap: 8px; padding-top: 12px; padding-bottom: 12px; }
