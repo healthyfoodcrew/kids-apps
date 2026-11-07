@@ -19,6 +19,7 @@ export interface Kid {
   color: string;
   weekly_pocket_money: number;
   daily_tech_minutes: number;
+  avatar_path?: string | null; // game-character picture in the private 'avatars' store
   sort: number;
 }
 

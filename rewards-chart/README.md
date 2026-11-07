@@ -71,6 +71,16 @@ The starting parent PIN is **1234**. On your phone, go to **Settings → Parent 
 
 ---
 
+## Game-character pictures
+
+On a parent's phone, go to **Settings**, find a child, and tap **Upload a photo**. Pick a style (Action hero, Sci-fi armour, Explorer or Space ranger) and tap **Make … a game character**. After about a minute you'll see the result; tap **Use this one** and it shows on the iPad straight away. If you don't like it, tap **Try again**.
+
+- The photo goes to OpenAI's image service to draw the character. The photo itself is never saved; only the finished picture is, in a private store that only your family's logins can see.
+- This needs an OpenAI API key. Create one at [platform.openai.com/api-keys](https://platform.openai.com/api-keys) and add some credit. Each picture costs a few cents. Add the key in Supabase → **Edge Functions** → **Secrets** with the name `OPENAI_API_KEY`.
+- The server code is in `supabase/functions/make-avatar`.
+
+---
+
 ## Security, in short
 
 - Every device has to sign in. Without a login nobody can see or change anything.

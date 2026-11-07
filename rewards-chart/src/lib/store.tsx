@@ -162,6 +162,7 @@ export interface FamilyState {
   setPin(pin: string): Promise<string | null>;
   recordPayout(kidId: string, weekStart: string, amount: number): Promise<string | null>;
   undoPayout(id: string): Promise<string | null>;
+  makeAvatar(kidId: string, photo: string, style: string): Promise<{ path?: string; url?: string | null; error?: string }>;
 }
 
 export const FamilyContext = createContext<FamilyState | null>(null);
@@ -309,6 +310,21 @@ export function FamilyProvider({ children }: { children: ReactNode }) {
       recordPayout: (kidId, weekStart, amount) =>
         run(() => db.from('payouts').upsert({ kid_id: kidId, week_start: weekStart, amount }, { onConflict: 'kid_id,week_start' })),
       undoPayout: (id) => run(() => db.from('payouts').delete().eq('id', id)),
+      makeAvatar: async (kidId, photo, style) => {
+        const { data: res, error: e } = await db.functions.invoke('make-avatar', { body: { kid_id: kidId, image: photo, style } });
+        if (e) {
+          // The function's own message is in the response body.
+          let message = e.message;
+          try {
+            const body = await (e as { context?: Response }).context?.json();
+            if (body?.error) message = body.error;
+          } catch {
+            /* keep the generic message */
+          }
+          return { error: message };
+        }
+        return res as { path: string; url: string | null };
+      },
     };
   }, [data, loading, error, refresh, today, run]);
 

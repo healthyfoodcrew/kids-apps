@@ -1,6 +1,7 @@
 import type { CSSProperties } from 'react';
 import { Link } from 'react-router-dom';
 import { Icon, UI_ICONS } from '../components/Icon';
+import { KidAvatar } from '../components/KidAvatar';
 import { summarizeKid, timerState } from '../lib/calc';
 import { useFamily, useNow } from '../lib/store';
 import { formatMoneyShort } from '../lib/time';
@@ -47,7 +48,7 @@ export function PlayerPick() {
               className="player"
               style={{ '--kid': kid.color, '--kid-shadow': darken(kid.color) } as CSSProperties}
             >
-              <div className="face">{kid.name.slice(0, 1).toUpperCase()}</div>
+              <KidAvatar kid={kid} className="face" />
               <div className="name">{kid.name.toUpperCase()}</div>
               <div className="lvl">LEVEL {s.level}</div>
               <div className="stats">

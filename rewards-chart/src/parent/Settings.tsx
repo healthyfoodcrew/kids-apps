@@ -3,6 +3,7 @@ import { Link } from 'react-router-dom';
 import { Icon, UI_ICONS } from '../components/Icon';
 import { useAuth, useFamily } from '../lib/store';
 import type { Kid, Settings as SettingsT } from '../lib/types';
+import { CharacterMaker } from './CharacterMaker';
 import { KidDot, ParentLayout, inkOf } from './ParentLayout';
 
 const COLORS = ['#FF5A5A', '#2EE6D6', '#4FB8FF', '#B98CFF', '#5BD45B', '#FFA53D', '#FF7AC6', '#FFC94A'];
@@ -53,6 +54,7 @@ function KidEditor({ kid, onSave }: { kid: Kid; onSave(k: Partial<Kid> & { id: s
       </div>
       {msg && <div className={`p-msg ${msg.kind}`}>{msg.text}</div>}
       <button className="p-btn primary" onClick={save}>Save {name || 'child'}</button>
+      <CharacterMaker kid={kid} />
     </div>
   );
 }

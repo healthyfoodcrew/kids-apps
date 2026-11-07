@@ -331,3 +331,17 @@ begin
     end;
   end loop;
 end $$;
+
+-- ─────────────────────────────────────────────────────────────
+-- Game-character pictures
+-- ─────────────────────────────────────────────────────────────
+alter table public.kids add column if not exists avatar_path text;
+
+-- Private picture store: only signed-in family members can view; only the make-avatar function writes.
+insert into storage.buckets (id, name, public, file_size_limit, allowed_mime_types)
+values ('avatars', 'avatars', false, 5242880, array['image/png', 'image/webp', 'image/jpeg'])
+on conflict (id) do update set public = false;
+
+drop policy if exists "family can view avatars" on storage.objects;
+create policy "family can view avatars" on storage.objects for select to authenticated
+  using (bucket_id = 'avatars' and public.is_member());

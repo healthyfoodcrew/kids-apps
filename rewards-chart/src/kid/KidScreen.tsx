@@ -2,6 +2,7 @@ import { useEffect, useRef, useState } from 'react';
 import type { CSSProperties } from 'react';
 import { Link, Navigate, useParams } from 'react-router-dom';
 import { Icon, UI_ICONS } from '../components/Icon';
+import { KidAvatar } from '../components/KidAvatar';
 import { summarizeKid, timerState } from '../lib/calc';
 import { useFamily, useNow } from '../lib/store';
 import { formatMoneyShort } from '../lib/time';
@@ -75,7 +76,7 @@ export function KidScreen() {
   return (
     <main className="kid-screen" style={{ '--kid': color } as CSSProperties}>
       <header className="kid-header">
-        <div className="avatar" style={{ background: color }}>{kid.name.slice(0, 1).toUpperCase()}</div>
+        <KidAvatar kid={kid} className="avatar" />
         <div className="kid-hello">
           <h1>HEY {kid.name.toUpperCase()}!</h1>
           <div className="chips">
