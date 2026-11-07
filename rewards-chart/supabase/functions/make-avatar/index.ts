@@ -6,6 +6,7 @@
 //
 // Needs the secret OPENAI_API_KEY (Supabase → Edge Functions → Secrets).
 import { createClient } from 'npm:@supabase/supabase-js@2';
+import { decodeBase64 } from 'jsr:@std/encoding@1/base64';
 
 const CORS = {
   'Access-Control-Allow-Origin': '*',
@@ -64,36 +65,57 @@ Deno.serve(async (req) => {
   const { data: kid } = await admin.from('kids').select('id').eq('id', kid_id).maybeSingle();
   if (!kid) return json({ error: 'Child not found' }, 404);
 
-  const ai = await fetch('https://api.openai.com/v1/images/edits', {
-    method: 'POST',
-    headers: { Authorization: `Bearer ${openaiKey}`, 'Content-Type': 'application/json' },
-    body: JSON.stringify({
-      model: 'gpt-image-2',
-      images: [{ image_url: image }],
-      prompt: BASE_PROMPT(STYLES[style] ?? STYLES.hero),
-      output_format: 'png',
-      n: 1,
-    }),
-  });
-  const result = await ai.json().catch(() => null);
-  if (!ai.ok) {
-    const message: string = result?.error?.message ?? `AI service error (${ai.status})`;
+  // The server function may only run for 150 seconds, so give the AI 130 and fail politely after that.
+  const callAI = async (extra: Record<string, unknown>) => {
+    const ctrl = new AbortController();
+    const timer = setTimeout(() => ctrl.abort(), 130_000);
+    try {
+      const res = await fetch('https://api.openai.com/v1/images/edits', {
+        method: 'POST',
+        signal: ctrl.signal,
+        headers: { Authorization: `Bearer ${openaiKey}`, 'Content-Type': 'application/json' },
+        body: JSON.stringify({
+          model: 'gpt-image-2',
+          images: [{ image_url: image }],
+          prompt: BASE_PROMPT(STYLES[style] ?? STYLES.hero),
+          output_format: 'jpeg',
+          output_compression: 88,
+          n: 1,
+          ...extra,
+        }),
+      });
+      return { res, body: await res.json().catch(() => null) };
+    } finally {
+      clearTimeout(timer);
+    }
+  };
+
+  let ai: { res: Response; body: any };
+  try {
+    // Low complexity is much faster and keeps the face closer to the photo.
+    ai = await callAI({ complexity: 'low', size: '1024x1024' });
+    if (!ai.res.ok && /complexity|size/i.test(ai.body?.error?.message ?? '')) ai = await callAI({});
+  } catch {
+    return json({ error: 'The AI took too long this time. Please try again in a minute.' }, 504);
+  }
+  if (!ai.res.ok) {
+    const message: string = ai.body?.error?.message ?? `AI service error (${ai.res.status})`;
     const declined = /safety|policy|moderation|rejected/i.test(message);
     return json({ error: declined ? 'The AI service declined this photo. Try a different photo.' : message }, 502);
   }
 
   let bytes: Uint8Array | null = null;
-  const item = result?.data?.[0];
+  const item = ai.body?.data?.[0];
   if (item?.b64_json) {
-    bytes = Uint8Array.from(atob(item.b64_json), (c) => c.charCodeAt(0));
+    bytes = decodeBase64(item.b64_json);
   } else if (item?.url) {
     const img = await fetch(item.url);
     if (img.ok) bytes = new Uint8Array(await img.arrayBuffer());
   }
   if (!bytes) return json({ error: 'The AI service did not return a picture. Try again.' }, 502);
 
-  const path = `${kid_id}/${Date.now()}.png`;
-  const { error: upError } = await admin.storage.from('avatars').upload(path, bytes, { contentType: 'image/png' });
+  const path = `${kid_id}/${Date.now()}.jpg`;
+  const { error: upError } = await admin.storage.from('avatars').upload(path, bytes, { contentType: 'image/jpeg' });
   if (upError) return json({ error: upError.message }, 500);
 
   const { data: signed } = await admin.storage.from('avatars').createSignedUrl(path, 60 * 60);

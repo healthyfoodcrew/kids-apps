@@ -81,3 +81,12 @@ export function formatMoneyShort(n: number): string {
   const r = Math.round(n * 100) / 100;
   return Number.isInteger(r) ? `$${r}` : `$${r.toFixed(2)}`;
 }
+
+/** When a tech ban ends, in words: "Sat 15 Nov, 7:00pm" or "until Mum or Dad lifts it". */
+export function banEndText(until: string | null, tz: string): string {
+  if (!until) return 'until Mum or Dad lifts it';
+  const d = new Date(until);
+  const day = d.toLocaleDateString('en-AU', { weekday: 'short', day: 'numeric', month: 'short', timeZone: tz });
+  const time = d.toLocaleTimeString('en-AU', { hour: 'numeric', minute: '2-digit', timeZone: tz }).replace(' ', '').toLowerCase();
+  return `until ${day}, ${time}`;
+}

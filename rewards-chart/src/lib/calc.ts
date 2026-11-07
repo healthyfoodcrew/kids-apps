@@ -1,5 +1,5 @@
 // All the game maths in one place, as plain functions so they can be tested.
-import type { Adjustment, BonusLog, Completion, FamilyData, Job, Kid, Payout, Settings } from './types';
+import type { Adjustment, BonusLog, Completion, FamilyData, Job, JobPeriod, Kid, Payout, Settings } from './types';
 import { addDays, localParts, timeToSeconds, weekStart, weekdayOf } from './time';
 
 export const STARS_PER_LEVEL = 150;
@@ -25,16 +25,31 @@ export interface TechState {
   taken: number; // parent deductions this week (positive number)
   total: number;
   takenReasons: Adjustment[];
+  ban: TechBan | null; // "tech time dead"
+}
+
+export interface TechBan {
+  until: string | null; // null = until a parent lifts it
+  reason: string;
+}
+
+/** Is tech time banned right now? A ban with an end time stops by itself. */
+export function activeBan(kid: Kid, now: Date): TechBan | null {
+  if (!kid.tech_banned) return null;
+  if (kid.tech_ban_until && Date.parse(kid.tech_ban_until) <= now.getTime()) return null;
+  return { until: kid.tech_ban_until ?? null, reason: kid.tech_ban_reason ?? '' };
 }
 
 export interface KidSummary {
   kid: Kid;
   today: string;
   weekStart: string;
-  todayJobs: TodayJob[];
+  todayJobs: TodayJob[]; // morning quests
   doneCount: number;
   totalCount: number;
-  allDone: boolean;
+  allDone: boolean; // every morning quest done (unlocks tech time)
+  eveningJobs: TodayJob[];
+  eveningDone: number;
   bonusJobs: BonusJobState[];
   weekStars: number;
   pendingStars: number;
@@ -56,16 +71,52 @@ export interface KidSummary {
   payout?: Payout;
 }
 
-export function dailyJobsFor(kidId: string, jobs: Job[], day: string): Job[] {
+const ROTATION_START = '2024-01-01'; // a Monday
+
+function daysSince(day: string): number {
+  return Math.round((Date.parse(`${day}T00:00:00Z`) - Date.parse(`${ROTATION_START}T00:00:00Z`)) / 86_400_000);
+}
+
+/**
+ * Which kids a job is for on `day`. "Everyone" jobs go to all assigned kids;
+ * "take turns" jobs go to one kid, moving on each time the job comes round (daily) or each week.
+ */
+export function kidsOnDuty(job: Job, day: string): string[] {
+  const ids = job.kid_ids ?? [];
+  if (job.assign_mode === 'each' || ids.length < 2) return ids;
+  const n = ids.length;
+  const d = daysSince(day);
+  const week = Math.floor(d / 7);
+  let turn: number;
+  if (job.assign_mode === 'rotate_weekly' || job.kind === 'bonus') {
+    turn = week;
+  } else {
+    // Count how many times the job has come round, so turns alternate evenly even if it skips days.
+    const days = [...job.days].sort((a, b) => a - b);
+    const wd = weekdayOf(day);
+    turn = week * Math.max(1, days.length) + days.filter((x) => x < wd).length;
+  }
+  const idx = (((turn + (job.rotation_offset ?? 0)) % n) + n) % n;
+  return [ids[idx]];
+}
+
+export function dailyJobsFor(kidId: string, jobs: Job[], day: string, period: JobPeriod = 'morning'): Job[] {
   const wd = weekdayOf(day);
   return jobs
-    .filter((j) => j.kid_id === kidId && j.kind === 'daily' && j.active && j.days.includes(wd))
+    .filter(
+      (j) =>
+        j.kind === 'daily' &&
+        j.active &&
+        (j.period ?? 'morning') === period &&
+        j.days.includes(wd) &&
+        kidsOnDuty(j, day).includes(kidId),
+    )
     .sort((a, b) => a.sort - b.sort || a.title.localeCompare(b.title));
 }
 
 export function bonusJobsFor(kidId: string, jobs: Job[]): Job[] {
   return jobs
-    .filter((j) => j.kid_id === kidId && j.kind === 'bonus' && j.active)
+    .filter((j) => j.kind === 'bonus' && j.active && (j.kid_ids ?? []).includes(kidId))
     .sort((a, b) => a.sort - b.sort || a.title.localeCompare(b.title));
 }
 
@@ -90,7 +141,7 @@ export function earnedSpeedBonus(
   if (dayJobs.length === 0) return false;
   const deadline = timeToSeconds(settings.leave_time) - settings.speed_bonus_minutes * 60;
   for (const job of dayJobs) {
-    const c = completions.find((x) => x.job_id === job.id && x.day === day);
+    const c = completions.find((x) => x.job_id === job.id && x.kid_id === kidId && x.day === day);
     if (!c) return false;
     const at = localParts(new Date(c.created_at), settings.timezone);
     if (at.day !== day || at.secondsOfDay > deadline) return false;
@@ -101,7 +152,7 @@ export function earnedSpeedBonus(
 function allDoneOn(kidId: string, day: string, jobs: Job[], completions: Completion[]): boolean | null {
   const dayJobs = dailyJobsFor(kidId, jobs, day);
   if (dayJobs.length === 0) return null; // nothing to do that day — doesn't count either way
-  return dayJobs.every((j) => completions.some((c) => c.job_id === j.id && c.day === day));
+  return dayJobs.every((j) => completions.some((c) => c.job_id === j.id && c.kid_id === kidId && c.day === day));
 }
 
 /** Days in a row with every morning job done. Today only counts once it's finished. */
@@ -214,10 +265,13 @@ export function summarizeKid(kid: Kid, data: FamilyData, now: Date): KidSummary 
   const bonusLogs = data.bonusLogs.filter((b) => b.kid_id === kid.id);
   const adjustments = data.adjustments.filter((a) => a.kid_id === kid.id);
 
-  const todayJobs: TodayJob[] = dailyJobsFor(kid.id, jobs, today).map((job) => {
-    const completion = completions.find((c) => c.job_id === job.id && c.day === today);
-    return { job, done: !!completion, completion };
-  });
+  const jobsFor = (period: JobPeriod): TodayJob[] =>
+    dailyJobsFor(kid.id, jobs, today, period).map((job) => {
+      const completion = completions.find((c) => c.job_id === job.id && c.day === today);
+      return { job, done: !!completion, completion };
+    });
+  const todayJobs = jobsFor('morning');
+  const eveningJobs = jobsFor('evening');
   const doneCount = todayJobs.filter((t) => t.done).length;
 
   const weekLogs = bonusLogs.filter((b) => inWeek(b.day, ws));
@@ -248,8 +302,9 @@ export function summarizeKid(kid: Kid, data: FamilyData, now: Date): KidSummary 
     earned: techEarned,
     given: techGiven,
     taken: techTaken,
-    total: Math.max(0, kid.weekly_tech_minutes + techEarned + techGiven - techTaken),
+    total: activeBan(kid, now) ? 0 : Math.max(0, kid.weekly_tech_minutes + techEarned + techGiven - techTaken),
     takenReasons: weekTech.filter((a) => a.amount < 0),
+    ban: activeBan(kid, now),
   };
 
   const lifetimeStars = Math.max(
@@ -267,6 +322,8 @@ export function summarizeKid(kid: Kid, data: FamilyData, now: Date): KidSummary 
     doneCount,
     totalCount: todayJobs.length,
     allDone: todayJobs.length > 0 && doneCount === todayJobs.length,
+    eveningJobs,
+    eveningDone: eveningJobs.filter((t) => t.done).length,
     bonusJobs,
     weekStars,
     pendingStars,

@@ -3,7 +3,7 @@ import { Link } from 'react-router-dom';
 import { Icon, UI_ICONS } from '../components/Icon';
 import { payHistory, pendingBonusLogs, summarizeKid } from '../lib/calc';
 import { useFamily, useNow } from '../lib/store';
-import { formatMoney, formatMoneyShort } from '../lib/time';
+import { banEndText, formatMoney, formatMoneyShort } from '../lib/time';
 import { KidDot, ParentLayout, inkOf } from './ParentLayout';
 
 function when(iso: string): string {
@@ -92,8 +92,8 @@ export function ParentHome() {
               </div>
               <div className="p-bar"><div style={{ width: `${s.target ? Math.min(100, (s.money / s.target) * 100) : 0}%`, background: ink }} /></div>
               <div style={{ display: 'flex', justifyContent: 'space-between', gap: 8, flexWrap: 'wrap' }}>
-                <span className="line">Morning jobs <b>{s.doneCount}/{s.totalCount}</b></span>
-                <span className="line">Tech time this week <b>{s.tech.total} min</b></span>
+                <span className="line">Morning <b>{s.doneCount}/{s.totalCount}</b>{s.eveningJobs.length > 0 && <> · Evening <b>{s.eveningDone}/{s.eveningJobs.length}</b></>}</span>
+                {s.tech.ban ? <span className="line" style={{ color: '#8a1c1c' }}><b style={{ color: '#8a1c1c' }}>Tech time dead</b> {banEndText(s.tech.ban.until, data.settings.timezone)}</span> : <span className="line">Tech time this week <b>{s.tech.total} min</b></span>}
               </div>
             </Link>
           );

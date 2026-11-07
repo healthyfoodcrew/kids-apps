@@ -59,7 +59,7 @@ export function PlayerPick() {
                 <div className="bar"><div style={{ width: `${pct}%` }} /></div>
                 <div className="sub">
                   <span>Quests today {s.doneCount}/{s.totalCount}</span>
-                  <span>Tech {s.tech.total} min this week</span>
+                  <span>{s.tech.ban ? 'Tech time dead' : `Tech ${s.tech.total} min this week`}</span>
                 </div>
               </div>
               <div className="cta">PLAY AS {kid.name.toUpperCase()}</div>

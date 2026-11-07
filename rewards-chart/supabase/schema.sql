@@ -51,10 +51,13 @@ create table if not exists public.kids (
 
 create table if not exists public.jobs (
   id uuid primary key default gen_random_uuid(),
-  kid_id uuid not null references public.kids on delete cascade,
+  kid_ids uuid[] not null default '{}' check (cardinality(kid_ids) >= 1),   -- who the job is for
   title text not null check (char_length(title) between 1 and 40),
   icon text not null default 'star',
   kind text not null check (kind in ('daily', 'bonus')),
+  period text not null default 'morning' check (period in ('morning', 'evening')),
+  assign_mode text not null default 'each' check (assign_mode in ('each', 'rotate_daily', 'rotate_weekly')),
+  rotation_offset int not null default 0,                                  -- shifts whose turn it is
   stars int not null default 10 check (stars between 0 and 200),
   max_per_week int not null default 3 check (max_per_week between 1 and 14),
   days int[] not null default '{1,2,3,4,5,6,7}',          -- daily jobs: which days they show
@@ -71,7 +74,7 @@ create table if not exists public.completions (
   day date not null,
   stars int not null default 0,
   created_at timestamptz not null default now(),
-  unique (job_id, day)
+  unique (job_id, kid_id, day)
 );
 
 -- A bonus job logged by a kid (waits for a parent thumbs-up).
@@ -189,14 +192,14 @@ begin
     on conflict (id) do update set pin_hash = excluded.pin_hash;
 end $$;
 
--- Completions: stars and kid always come from the job, never from the device.
+-- Completions: stars always come from the job, and the kid must be one the job is assigned to.
 create or replace function public.completions_fill() returns trigger
 language plpgsql security definer set search_path = public as $$
 declare j public.jobs;
 begin
   select * into j from public.jobs where id = new.job_id;
   if not found or j.kind <> 'daily' then raise exception 'Not a daily job'; end if;
-  new.kid_id := j.kid_id;
+  if not (new.kid_id = any (j.kid_ids)) then raise exception 'That job is not assigned to this child'; end if;
   new.stars := j.stars;
   return new;
 end $$;
@@ -216,13 +219,13 @@ declare
 begin
   select * into j from public.jobs where id = new.job_id;
   if not found or j.kind <> 'bonus' then raise exception 'Not a bonus job'; end if;
+  if not (new.kid_id = any (j.kid_ids)) then raise exception 'That job is not assigned to this child'; end if;
   select count(*) into used from public.bonus_logs
-    where job_id = j.id and status <> 'rejected'
+    where job_id = j.id and kid_id = new.kid_id and status <> 'rejected'
       and day >= date_trunc('week', new.day)::date
       and day < date_trunc('week', new.day)::date + 7;
   if used >= j.max_per_week then raise exception 'Weekly limit reached for this job'; end if;
   select bonus_tech_minutes into mins from public.settings where id = 1;
-  new.kid_id := j.kid_id;
   new.stars := j.stars;
   new.tech_minutes := coalesce(mins, 10);
   if public.can_manage() then
@@ -355,3 +358,27 @@ begin
     update public.kids set weekly_tech_minutes = weekly_tech_minutes * 7;
   end if;
 end $$;
+
+-- Older installs: jobs used to belong to one child each; now they have a list of kids,
+-- morning/evening, and can be shared or take turns.
+do $$
+begin
+  if exists (select 1 from information_schema.columns
+             where table_schema = 'public' and table_name = 'jobs' and column_name = 'kid_id') then
+    alter table public.jobs add column if not exists kid_ids uuid[];
+    alter table public.jobs add column if not exists period text not null default 'morning';
+    alter table public.jobs add column if not exists assign_mode text not null default 'each';
+    alter table public.jobs add column if not exists rotation_offset int not null default 0;
+    update public.jobs set kid_ids = array[kid_id] where kid_ids is null;
+    alter table public.jobs alter column kid_ids set not null;
+    alter table public.jobs drop column kid_id;
+    alter table public.completions drop constraint if exists completions_job_id_day_key;
+    alter table public.completions add constraint completions_job_kid_day_key unique (job_id, kid_id, day);
+  end if;
+end $$;
+
+-- "Tech time dead": a parent can ban tech time completely, for a set time or until lifted.
+alter table public.kids add column if not exists tech_banned boolean not null default false;
+alter table public.kids add column if not exists tech_ban_until timestamptz;      -- null = until a parent lifts it
+alter table public.kids add column if not exists tech_ban_reason text not null default '';
+alter table public.kids add column if not exists tech_ban_started_at timestamptz;

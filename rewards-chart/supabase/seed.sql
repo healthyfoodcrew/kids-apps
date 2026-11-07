@@ -16,8 +16,8 @@ with k as (
     ('Louie', 7, '#2EE6D6', 8, 210, 2)
   returning id, name
 )
-insert into public.jobs (kid_id, title, icon, kind, stars, max_per_week, days, sort)
-select k.id, j.title, j.icon, j.kind, j.stars, j.max_per_week, j.days::int[], j.sort
+insert into public.jobs (kid_ids, title, icon, kind, stars, max_per_week, days, sort)
+select array[k.id], j.title, j.icon, j.kind, j.stars, j.max_per_week, j.days::int[], j.sort
 from k
 join (values
   -- Tommy's morning quests

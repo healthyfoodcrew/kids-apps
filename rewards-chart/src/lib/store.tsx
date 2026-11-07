@@ -5,6 +5,8 @@ import { addDays, localParts } from './time';
 import {
   DEFAULT_SETTINGS,
   type AdjustmentKind,
+  type AssignMode,
+  type JobPeriod,
   type BonusStatus,
   type FamilyData,
   type Job,
@@ -132,15 +134,22 @@ const EMPTY: FamilyData = {
 
 export interface JobInput {
   id?: string;
-  kid_id: string;
+  kid_ids: string[];
   title: string;
   icon: string;
   kind: 'daily' | 'bonus';
+  period: JobPeriod;
+  assign_mode: AssignMode;
+  rotation_offset: number;
   stars: number;
   max_per_week: number;
   days: number[];
   active: boolean;
 }
+
+/** Jobs are listed together by type: morning, evening, bonus. */
+const sameGroup = (a: { kind: string; period?: string }, b: { kind: string; period?: string }) =>
+  a.kind === b.kind && (a.kind === 'bonus' || (a.period ?? 'morning') === (b.period ?? 'morning'));
 
 export interface FamilyState {
   data: FamilyData;
@@ -148,8 +157,8 @@ export interface FamilyState {
   error: string | null;
   refresh(): Promise<void>;
   today(): string;
-  toggleJob(job: Job, completionId?: string): Promise<string | null>;
-  logBonus(job: Job): Promise<string | null>;
+  toggleJob(job: Job, kidId: string, completionId?: string): Promise<string | null>;
+  logBonus(job: Job, kidId: string): Promise<string | null>;
   undoBonus(logId: string): Promise<string | null>;
   reviewBonus(logId: string, status: BonusStatus): Promise<string | null>;
   addAdjustment(kidId: string, kind: AdjustmentKind, amount: number, reason: string): Promise<string | null>;
@@ -171,6 +180,8 @@ function friendly(message: string): string {
   if (message.includes('Weekly limit')) return 'That job is all done for this week!';
   if (message.includes('row-level security')) return 'Only a parent can do that.';
   if (message.includes('duplicate key')) return 'Already done!';
+  if (message.includes('not assigned to this child')) return "That job isn't yours today.";
+  if (message.includes('Failed to send a request')) return 'Could not reach the server. Check the internet and try again.';
   return message;
 }
 
@@ -260,13 +271,13 @@ export function FamilyProvider({ children }: { children: ReactNode }) {
       error,
       refresh,
       today,
-      toggleJob: (job, completionId) =>
+      toggleJob: (job, kidId, completionId) =>
         run(() =>
           completionId
             ? db.from('completions').delete().eq('id', completionId)
-            : db.from('completions').insert({ job_id: job.id, kid_id: job.kid_id, day: today() }),
+            : db.from('completions').insert({ job_id: job.id, kid_id: kidId, day: today() }),
         ),
-      logBonus: (job) => run(() => db.from('bonus_logs').insert({ job_id: job.id, kid_id: job.kid_id, day: today() })),
+      logBonus: (job, kidId) => run(() => db.from('bonus_logs').insert({ job_id: job.id, kid_id: kidId, day: today() })),
       undoBonus: (id) => run(() => db.from('bonus_logs').delete().eq('id', id)),
       reviewBonus: (id, status) =>
         run(() => db.from('bonus_logs').update({ status, reviewed_at: new Date().toISOString() }).eq('id', id)),
@@ -277,14 +288,14 @@ export function FamilyProvider({ children }: { children: ReactNode }) {
         run(() => {
           const { id, ...rest } = job;
           if (id) return db.from('jobs').update(rest).eq('id', id);
-          const siblings = data.jobs.filter((j) => j.kid_id === job.kid_id && j.kind === job.kind);
+          const siblings = data.jobs.filter((j) => sameGroup(j, job));
           const sort = siblings.reduce((m, j) => Math.max(m, j.sort), 0) + 1;
           return db.from('jobs').insert({ ...rest, sort });
         }),
       deleteJob: (id) => run(() => db.from('jobs').delete().eq('id', id)),
       moveJob: async (job, dir) => {
         const list = data.jobs
-          .filter((j) => j.kid_id === job.kid_id && j.kind === job.kind)
+          .filter((j) => sameGroup(j, job))
           .sort((a, b) => a.sort - b.sort || a.title.localeCompare(b.title));
         const i = list.findIndex((j) => j.id === job.id);
         const other = list[i + dir];
@@ -314,7 +325,9 @@ export function FamilyProvider({ children }: { children: ReactNode }) {
         const { data: res, error: e } = await db.functions.invoke('make-avatar', { body: { kid_id: kidId, image: photo, style } });
         if (e) {
           // The function's own message is in the response body.
-          let message = e.message;
+          let message = /Failed to send a request/i.test(e.message)
+            ? 'The picture took too long or the connection dropped. Please try again.'
+            : e.message;
           try {
             const body = await (e as { context?: Response }).context?.json();
             if (body?.error) message = body.error;

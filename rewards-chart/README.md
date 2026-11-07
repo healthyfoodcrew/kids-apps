@@ -21,6 +21,9 @@ It's a web app built with React. The data lives in [Supabase](https://supabase.c
 | Morning quests | Each child has their own list. Each one ticked is worth stars (10 by default). | Parent → Setup › Jobs |
 | Bonus jobs | Kids tap them on the iPad, then a parent approves. Each one is worth stars plus 10 min tech time, and can be done up to 3× a week. | Parent → Setup › Jobs |
 | Pocket money | $1 for every 30 stars, up to each child's weekly amount. The week runs Monday to Sunday and is paid Sunday. | Parent → Setup › Kids |
+| Shared jobs & turns | Jobs live in one list. Each job is for one or more kids: everyone does it, or they take turns each day or each week. You can set whose turn it is today. | Parent → Setup › Jobs |
+| Morning & evening | Morning quests unlock tech time and count for the speed bonus. Evening quests show on the iPad from the afternoon. | Parent → Setup › Jobs |
+| Tech time dead | One button bans all tech time for the rest of today, 1 or 3 days, 1 or 2 weeks, or until you lift it. The iPad shows TECH TIME DEAD with the end time and the reason. | Parent → Give / take |
 | Dollar cards | One card per dollar. Earned dollars get a tick. The next dollar shows its star progress. Dollars taken away are marked TAKEN. | — |
 | Tech time | A weekly allowance (210 min, set per child), plus 10 min for each bonus job approved that week, minus anything taken away. It starts again every Monday, and it shows as locked each day until the morning quests are done. | Parent → Setup › Kids |
 | School countdown | Counts down to leave time (8:15am) on school days. Finish every quest 15+ minutes early for +20 bonus stars. | Parent → Setup › School mornings |

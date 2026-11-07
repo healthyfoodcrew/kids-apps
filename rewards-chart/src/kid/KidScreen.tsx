@@ -5,7 +5,7 @@ import { Icon, UI_ICONS } from '../components/Icon';
 import { KidAvatar } from '../components/KidAvatar';
 import { summarizeKid, timerState } from '../lib/calc';
 import { useFamily, useNow } from '../lib/store';
-import { formatMoneyShort } from '../lib/time';
+import { banEndText, formatMoneyShort, localParts } from '../lib/time';
 import type { Job } from '../lib/types';
 import { Confetti, RewardTrack, TILE_COLORS, TimerCard } from './parts';
 
@@ -17,6 +17,7 @@ export function KidScreen() {
   const [busy, setBusy] = useState<string | null>(null);
   const [celebrate, setCelebrate] = useState(false);
   const prevAllDone = useRef<boolean | null>(null);
+  const [periodChoice, setPeriodChoice] = useState<'morning' | 'evening' | null>(null);
 
   const kid = data.kids.find((k) => k.id === kidId);
   const s = kid ? summarizeKid(kid, data, now) : null;
@@ -39,13 +40,19 @@ export function KidScreen() {
 
   const timer = timerState(data.settings, now);
   const color = kid.color;
-  const cols = Math.min(5, Math.max(1, s.todayJobs.length));
+  // Morning quests until midday (or until they're done after midday), then evening quests.
+  const hour = localParts(now, data.settings.timezone).secondsOfDay / 3600;
+  const autoPeriod = s.eveningJobs.length > 0 && (hour >= 15 || (hour >= 12 && s.allDone)) ? 'evening' : 'morning';
+  const period = s.eveningJobs.length === 0 ? 'morning' : periodChoice ?? autoPeriod;
+  const shown = period === 'morning' ? s.todayJobs : s.eveningJobs;
+  const shownDone = shown.filter((t) => t.done).length;
+  const cols = Math.min(5, Math.max(1, shown.length));
   const jobsToNext = Math.max(1, Math.ceil(s.starsToNextDollar / 10));
 
   async function tapQuest(job: Job, completionId?: string) {
     if (busy) return;
     setBusy(job.id);
-    const err = await toggleJob(job, completionId);
+    const err = await toggleJob(job, kid!.id, completionId);
     setBusy(null);
     if (err) setToast(err);
   }
@@ -57,7 +64,7 @@ export function KidScreen() {
       return;
     }
     setBusy(job.id);
-    const err = await logBonus(job);
+    const err = await logBonus(job, kid!.id);
     setBusy(null);
     setToast(err ?? `Nice one! +${job.stars} stars once Mum or Dad gives a thumbs up`);
   }
@@ -137,19 +144,31 @@ export function KidScreen() {
 
         <section className="area-quests" aria-label="Today's quests">
           <div className="quests-head">
-            <h2>TODAY'S QUESTS</h2>
-            <div className="dots" aria-label={`${s.doneCount} of ${s.totalCount} done`}>
-              {s.todayJobs.map((t) => (
+            {s.eveningJobs.length > 0 ? (
+              <div className="period-tabs" role="group" aria-label="Morning or evening quests">
+                <button aria-pressed={period === 'morning'} onClick={() => setPeriodChoice('morning')}>
+                  MORNING <span>{s.doneCount}/{s.totalCount}</span>
+                </button>
+                <button aria-pressed={period === 'evening'} onClick={() => setPeriodChoice('evening')}>
+                  EVENING <span>{s.eveningDone}/{s.eveningJobs.length}</span>
+                </button>
+              </div>
+            ) : (
+              <h2>MORNING QUESTS</h2>
+            )}
+            <div className="dots" aria-label={`${shownDone} of ${shown.length} done`}>
+              {shown.map((t) => (
                 <span key={t.job.id} className={`dot${t.done ? ' on' : ''}`} style={t.done ? { background: color } : undefined} />
               ))}
             </div>
           </div>
-          {s.todayJobs.length === 0 ? (
-            <div className="quests-empty">No quests today. Enjoy your day!</div>
+          {shown.length === 0 ? (
+            <div className="quests-empty">No {period} quests today. Enjoy!</div>
           ) : (
             <div className="quest-grid" style={{ '--cols': cols } as CSSProperties}>
-              {s.todayJobs.map((t, i) => {
+              {shown.map((t, i) => {
                 const tile = TILE_COLORS[i % TILE_COLORS.length];
+                const turns = t.job.assign_mode !== 'each' && t.job.kid_ids.length > 1;
                 return (
                   <button
                     key={t.job.id}
@@ -164,6 +183,7 @@ export function KidScreen() {
                     )}
                     <span className="icon-box"><Icon name={t.job.icon} size={40} /></span>
                     <span className="title">{t.job.title}</span>
+                    {turns && !t.done && <span className="turn-tag">YOUR TURN</span>}
                     <span className="foot">{t.done ? 'DONE!' : `TAP ME · +${t.job.stars}`}</span>
                   </button>
                 );
@@ -172,7 +192,20 @@ export function KidScreen() {
           )}
         </section>
 
-        <section className={`panel tech area-tech${s.allDone || s.totalCount === 0 ? ' open' : ''}`} aria-label="Tech time">
+        {s.tech.ban ? (
+          <section className="panel tech dead area-tech" aria-label="Tech time banned">
+            <div className="row">
+              <span className="title"><Icon d={UI_ICONS.gamepad} size={26} strokeWidth={1.9} />TECH TIME</span>
+              <span className="status">BANNED</span>
+            </div>
+            <div className="dead-title">TECH TIME DEAD</div>
+            <div className="log">
+              <span className="until">Banned {banEndText(s.tech.ban.until, data.settings.timezone)}</span>
+              {s.tech.ban.reason && <span className="minus">Reason: {s.tech.ban.reason}</span>}
+            </div>
+          </section>
+        ) : (
+          <section className={`panel tech area-tech${s.allDone || s.totalCount === 0 ? ' open' : ''}`} aria-label="Tech time">
           <div className="row">
             <span className="title"><Icon d={UI_ICONS.gamepad} size={26} strokeWidth={1.9} />TECH TIME</span>
             <span className="status">
@@ -192,6 +225,7 @@ export function KidScreen() {
             ))}
           </div>
         </section>
+        )}
 
         <section className="panel bonus area-bonus" aria-label="Bonus jobs">
           <div className="panel-head">

@@ -21,17 +21,27 @@ export interface Kid {
   weekly_tech_minutes: number; // tech time per week (Monday–Sunday)
   created_at?: string;
   avatar_path?: string | null; // game-character picture in the private 'avatars' store
+  tech_banned?: boolean; // "tech time dead"
+  tech_ban_until?: string | null; // null while banned = until a parent lifts it
+  tech_ban_reason?: string;
+  tech_ban_started_at?: string | null;
   sort: number;
 }
 
 export type JobKind = 'daily' | 'bonus';
 
+export type JobPeriod = 'morning' | 'evening';
+export type AssignMode = 'each' | 'rotate_daily' | 'rotate_weekly';
+
 export interface Job {
   id: string;
-  kid_id: string;
+  kid_ids: string[]; // who the job is for
   title: string;
   icon: string;
   kind: JobKind;
+  period: JobPeriod; // daily jobs: morning or evening
+  assign_mode: AssignMode; // everyone does it, or they take turns (daily or weekly)
+  rotation_offset: number; // shifts whose turn it is
   stars: number;
   max_per_week: number;
   days: number[];

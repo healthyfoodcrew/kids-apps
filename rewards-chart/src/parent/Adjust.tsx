@@ -6,6 +6,7 @@ import { useFamily, useNow } from '../lib/store';
 import { formatMoney } from '../lib/time';
 import type { AdjustmentKind } from '../lib/types';
 import { KidDot, ParentLayout, inkOf } from './ParentLayout';
+import { TechBan } from './TechBan';
 
 const TAKE_REASONS = ['Not listening', 'Fighting', 'Rude words', 'Screens after bedtime', 'Not ready on time', 'Mess left out'];
 const GIVE_REASONS = ['Extra helpful', 'Great attitude', 'Kind to brother', 'Homework done', 'Tried something new'];
@@ -48,7 +49,7 @@ export function Adjust() {
   let after = '';
   if (s) {
     if (kind === 'money') after = `Leaves ${formatMoney(Math.max(0, s.money + (take ? -amount : amount)))} earned this week`;
-    else if (kind === 'tech') after = `Leaves ${Math.max(0, s.tech.total + (take ? -amount : amount))} min tech time today`;
+    else if (kind === 'tech') after = `Leaves ${Math.max(0, s.tech.total + (take ? -amount : amount))} min tech time this week`;
     else after = `${Math.max(0, s.weekStars + (take ? -amount : amount))} stars this week`;
   }
 
@@ -76,7 +77,7 @@ export function Adjust() {
 
   const sources: { id: AdjustmentKind; label: string; icon: string; balance: string }[] = [
     { id: 'money', label: 'Pocket money', icon: UI_ICONS.wallet, balance: s ? `${formatMoney(s.money)} earned` : '' },
-    { id: 'tech', label: 'Tech time', icon: UI_ICONS.gamepad, balance: s ? `${s.tech.total} min today` : '' },
+    { id: 'tech', label: 'Tech time', icon: UI_ICONS.gamepad, balance: s ? (s.tech.ban ? 'Banned' : `${s.tech.total} min this week`) : '' },
     { id: 'stars', label: 'Stars', icon: JOB_ICONS.star.d, balance: s ? `${Math.max(0, s.weekStars)} this week` : '' },
   ];
 
@@ -108,6 +109,8 @@ export function Adjust() {
           ))}
         </div>
       </section>
+
+      {take && kid && <TechBan kid={kid} />}
 
       <section className="p-section">
         <p className="p-label">{take ? 'Take from' : 'Give'}</p>

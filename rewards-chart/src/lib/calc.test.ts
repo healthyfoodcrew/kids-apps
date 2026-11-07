@@ -1,13 +1,13 @@
 import { describe, expect, it } from 'vitest';
-import { earnedSpeedBonus, payHistory, streakFor, summarizeKid, timerState } from './calc';
+import { dailyJobsFor, earnedSpeedBonus, kidsOnDuty, payHistory, streakFor, summarizeKid, timerState } from './calc';
 import { addDays, localParts, weekStart } from './time';
 import { DEFAULT_SETTINGS, type FamilyData, type Job, type Kid } from './types';
 
 const settings = { ...DEFAULT_SETTINGS };
 const kid: Kid = { id: 'k1', name: 'Louie', age: 7, color: '#2EE6D6', weekly_pocket_money: 8, weekly_tech_minutes: 210, sort: 1 };
 
-function job(id: string, kind: 'daily' | 'bonus', stars = 10, days = [1, 2, 3, 4, 5, 6, 7]): Job {
-  return { id, kid_id: 'k1', title: id, icon: 'star', kind, stars, max_per_week: 3, days, active: true, sort: 0 };
+function job(id: string, kind: 'daily' | 'bonus', stars = 10, days = [1, 2, 3, 4, 5, 6, 7], extra: Partial<Job> = {}): Job {
+  return { id, kid_ids: ['k1'], title: id, icon: 'star', kind, period: 'morning', assign_mode: 'each', rotation_offset: 0, stars, max_per_week: 3, days, active: true, sort: 0, ...extra };
 }
 
 const jobs = [job('bed', 'daily'), job('teeth', 'daily'), job('dish', 'bonus', 15)];
@@ -168,5 +168,53 @@ describe('school countdown', () => {
     expect(timerState(settings, new Date('2025-11-11T21:20:00Z')).phase).toBe('go'); // 8:20
     expect(timerState(settings, new Date('2025-11-11T23:00:00Z')).phase).toBe('none'); // 10:00
     expect(timerState(settings, new Date('2025-11-14T20:40:00Z')).schoolDay).toBe(false); // Saturday
+  });
+});
+
+describe('shared jobs, turns and evening jobs', () => {
+  it('gives an "everyone" job to every assigned kid', () => {
+    const j = job('teeth', 'daily', 10, [1, 2, 3, 4, 5, 6, 7], { kid_ids: ['k1', 'k2'] });
+    expect(kidsOnDuty(j, today)).toEqual(['k1', 'k2']);
+  });
+
+  it('takes turns each time the job comes round, skipping days it is off', () => {
+    const j = job('bins', 'daily', 10, [1, 2, 3, 4, 5], { kid_ids: ['k1', 'k2'], assign_mode: 'rotate_daily' });
+    // Mon 10 Nov 2025 → Fri 14 Nov, then Mon 17 Nov carries on alternating.
+    const seq = ['2025-11-10', '2025-11-11', '2025-11-12', '2025-11-13', '2025-11-14', '2025-11-17'].map((d) => kidsOnDuty(j, d)[0]);
+    for (let i = 1; i < seq.length; i++) expect(seq[i]).not.toBe(seq[i - 1]);
+  });
+
+  it('takes turns weekly, and the offset changes whose turn it is', () => {
+    const j = job('bath', 'daily', 10, [1, 2, 3, 4, 5, 6, 7], { kid_ids: ['k1', 'k2'], assign_mode: 'rotate_weekly' });
+    const a = kidsOnDuty(j, '2025-11-10')[0];
+    expect(kidsOnDuty(j, '2025-11-16')[0]).toBe(a); // same week
+    expect(kidsOnDuty(j, '2025-11-17')[0]).not.toBe(a); // next week
+    expect(kidsOnDuty({ ...j, rotation_offset: 1 }, '2025-11-10')[0]).not.toBe(a);
+  });
+
+  it('keeps evening jobs separate from morning quests (which unlock tech time)', () => {
+    const jobs2 = [job('bed', 'daily'), job('dishes', 'daily', 10, [1, 2, 3, 4, 5, 6, 7], { period: 'evening' })];
+    expect(dailyJobsFor('k1', jobs2, today, 'morning').map((x) => x.id)).toEqual(['bed']);
+    expect(dailyJobsFor('k1', jobs2, today, 'evening').map((x) => x.id)).toEqual(['dishes']);
+    const s = summarizeKid(kid, data({ jobs: jobs2, completions: [done('bed', today, '2025-11-11T20:00:00Z')] }), wedMorning);
+    expect(s.allDone).toBe(true);
+    expect(s.eveningJobs).toHaveLength(1);
+    expect(s.eveningDone).toBe(0);
+  });
+});
+
+describe('tech time dead', () => {
+  it('zeroes tech time while banned and ends by itself when the time is up', () => {
+    const banned = { ...kid, tech_banned: true, tech_ban_until: '2025-11-14T00:00:00Z', tech_ban_reason: 'Lied about homework' };
+    const s = summarizeKid(banned, data({ kids: [banned] }), wedMorning);
+    expect(s.tech.ban?.reason).toBe('Lied about homework');
+    expect(s.tech.total).toBe(0);
+    const later = summarizeKid(banned, data({ kids: [banned] }), new Date('2025-11-15T00:00:00Z'));
+    expect(later.tech.ban).toBeNull();
+    expect(later.tech.total).toBe(210);
+  });
+  it('stays banned until lifted when there is no end time', () => {
+    const banned = { ...kid, tech_banned: true, tech_ban_until: null };
+    expect(summarizeKid(banned, data({ kids: [banned] }), new Date('2030-01-01T00:00:00Z')).tech.ban).not.toBeNull();
   });
 });
