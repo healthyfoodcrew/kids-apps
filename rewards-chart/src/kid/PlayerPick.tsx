@@ -82,7 +82,7 @@ export function PlayerPick() {
                 </div>
                 <div className="bar"><div style={{ width: `${pct}%` }} /></div>
                 <div className="sub">
-                  <span>Quests today {s.doneCount}/{s.totalCount}</span>
+                  <span>{s.allDone ? 'Play time unlocked!' : `Morning jobs ${s.doneCount}/${s.totalCount}`}</span>
                   <span>{s.tech.ban ? 'Tech time dead' : `Tech ${s.tech.total} min`}</span>
                 </div>
               </div>

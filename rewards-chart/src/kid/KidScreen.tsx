@@ -7,7 +7,7 @@ import { summarizeKid, timerState } from '../lib/calc';
 import { useFamily, useNow } from '../lib/store';
 import { banEndText, formatMoneyShort, localParts } from '../lib/time';
 import type { Job } from '../lib/types';
-import { Confetti, DogFace, PawPrint, RewardTrack, TILE_COLORS, TimerCard } from './parts';
+import { Bone, Confetti, DogSitting, PawPrint, RewardTrack, TILE_COLORS, TimerCard } from './parts';
 
 export function KidScreen() {
   const { kidId } = useParams();
@@ -145,7 +145,17 @@ export function KidScreen() {
 
         <section className="area-quests" aria-label="Today's quests">
           <div className="quests-head">
-            <h2>{period === 'morning' ? 'MORNING QUESTS' : 'EVENING QUESTS'}</h2>
+            {period === 'morning' && s.allDone ? (
+              <div className="play-banner" role="status">
+                <Icon d={UI_ICONS.unlock} size={30} strokeWidth={2.4} />
+                <div>
+                  <div className="play-title">PLAY TIME UNLOCKED!</div>
+                  <div className="play-sub">All morning jobs done. Go outside and play!</div>
+                </div>
+              </div>
+            ) : (
+              <h2>{period === 'morning' ? 'MORNING QUESTS' : 'EVENING QUESTS'}</h2>
+            )}
           </div>
           {shown.length === 0 ? (
             <div className="quests-empty">No {period} quests today. Enjoy!</div>
@@ -213,38 +223,39 @@ export function KidScreen() {
         </section>
         )}
 
-        <section className={`panel pet area-pet${petDone ? ' done' : ''}`} aria-label={`${petName}'s task`}>
-          <PawPrint size={22} style={{ position: 'absolute', top: 12, right: 14, opacity: 0.35, transform: 'rotate(20deg)' }} />
-          <PawPrint size={16} style={{ position: 'absolute', bottom: 12, right: 40, opacity: 0.25, transform: 'rotate(-15deg)' }} />
-          <div className="pet-head">
-            <DogFace size={56} happy={petDone} />
-            <div>
-              <div className="pet-title">{petName.toUpperCase()}'S TASK</div>
-              <div className="pet-sub">{period === 'morning' ? 'This morning' : 'This afternoon'}</div>
-            </div>
-          </div>
-          {petTasks.length === 0 ? (
-            <div className="pet-none">{petName} is all sorted {period === 'morning' ? 'this morning' : 'tonight'}!</div>
-          ) : (
-            <div className="pet-tasks">
+        <section className={`pet area-pet${petDone ? ' done' : ''}`} aria-label={`${petName}'s task`}>
+          <span className="pet-bone"><Bone size={64} /></span>
+          <span className="pet-dog"><DogSitting width={112} happy={petDone} /></span>
+          <div className="pet-body">
+            <span className="pet-tag">
+              {petName.toUpperCase()}'S TASK · {petDone ? 'DONE' : period === 'morning' ? 'MORNING' : 'AFTERNOON'}
+            </span>
+            {petTasks.length === 0 ? (
+              <div className="pet-title">{petName} is all sorted!</div>
+            ) : petDone ? (
+              <div className="pet-title">Thanks {kid.name}! Woof!</div>
+            ) : (
+              <div className="pet-title">{petTasks.filter((t) => !t.done).map((t) => t.job.title).join(' + ')}</div>
+            )}
+            <div className="pet-buttons">
               {petTasks.map((t) => (
                 <button
                   key={t.job.id}
-                  className={`pet-task${t.done ? ' done' : ''}`}
+                  className={`pet-btn${t.done ? ' done' : ''}`}
                   aria-pressed={t.done}
+                  aria-label={t.done ? `${t.job.title}: done (tap to undo)` : `I did it: ${t.job.title}`}
                   disabled={busy === t.job.id}
                   onClick={() => tapQuest(t.job, t.completion?.id)}
                 >
-                  <span className="pet-icon"><Icon name={t.job.icon} size={28} strokeWidth={2.2} /></span>
-                  <span className="pet-name">{t.job.title}</span>
-                  <span className="pet-state">
-                    {t.done ? <><Icon d={UI_ICONS.check} size={18} strokeWidth={3.2} /> DONE</> : `TAP WHEN DONE · +${t.job.stars}`}
-                  </span>
+                  {t.done ? (
+                    <><Icon d={UI_ICONS.check} size={20} strokeWidth={3.4} />+{t.job.stars} STARS</>
+                  ) : (
+                    <><PawPrint size={20} />{petTasks.length > 1 ? `${t.job.title.split(' ')[0].toUpperCase()} · +${t.job.stars}` : `I DID IT · +${t.job.stars}`}</>
+                  )}
                 </button>
               ))}
             </div>
-          )}
-          {petDone && <div className="pet-thanks">{petName} says thanks! Woof!</div>}
+          </div>
         </section>
 
         <section className="panel bonus area-bonus" aria-label="Bonus jobs">
@@ -294,13 +305,13 @@ export function KidScreen() {
           <div className="celebrate" role="dialog" aria-modal="true" aria-label="Quests complete">
             <div className="card">
               <Icon d={UI_ICONS.unlock} size={64} />
-              <h2>{s.speedBonusToday ? 'SPEED RUN!' : 'QUESTS COMPLETE!'}</h2>
+              <h2>PLAY TIME UNLOCKED!</h2>
               <p>
                 {s.speedBonusToday
-                  ? `+${data.settings.speed_bonus_stars} bonus stars. Tech time unlocked!`
-                  : 'Tech time is unlocked. Go have fun!'}
+                  ? `Speed run! +${data.settings.speed_bonus_stars} bonus stars. Go outside and play!`
+                  : 'All morning jobs done. Go outside and play!'}
               </p>
-              <button onClick={() => setCelebrate(false)}>AWESOME</button>
+              <button onClick={() => setCelebrate(false)}>LET'S GO!</button>
             </div>
           </div>
         </>

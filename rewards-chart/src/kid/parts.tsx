@@ -212,3 +212,40 @@ export function PawPrint({ size = 18, style }: { size?: number; style?: CSSPrope
     </svg>
   );
 }
+
+/** Bruno sitting, with his red collar: used on the pet card. */
+export function DogSitting({ width = 120, happy = false }: { width?: number; happy?: boolean }) {
+  return (
+    <svg width={width} height={width * 1.25} viewBox="0 -10 100 140" aria-hidden="true">
+      <ellipse cx="50" cy="104" rx="30" ry="22" fill="#C98B55" />
+      <ellipse cx="50" cy="108" rx="14" ry="12" fill="#F2D3B0" />
+      <rect x="30" y="80" width="40" height="8" rx="4" fill="#E5484D" />
+      <circle cx="50" cy="90" r="5" fill="#FFD66B" />
+      <path d="M18 30 C6 34 6 62 16 70 C24 62 28 46 30 34 Z" fill="#7A4A2A" />
+      <path d="M82 30 C94 34 94 62 84 70 C76 62 72 46 70 34 Z" fill="#7A4A2A" />
+      <ellipse cx="50" cy="52" rx="32" ry="30" fill="#C98B55" />
+      <ellipse cx="50" cy="64" rx="18" ry="14" fill="#F2D3B0" />
+      {happy ? (
+        <path d="M33 46 q5 -6 10 0 M57 46 q5 -6 10 0" stroke="#2B1A10" strokeWidth="3.5" fill="none" strokeLinecap="round" />
+      ) : (
+        <>
+          <circle cx="38" cy="46" r="5" fill="#2B1A10" />
+          <circle cx="62" cy="46" r="5" fill="#2B1A10" />
+          <circle cx="39.5" cy="44.5" r="1.6" fill="#fff" />
+          <circle cx="63.5" cy="44.5" r="1.6" fill="#fff" />
+        </>
+      )}
+      <ellipse cx="50" cy="58" rx="6" ry="4.5" fill="#2B1A10" />
+      <path d="M50 62 v4 M50 66 q-6 5 -10 1 M50 66 q6 5 10 1" stroke="#2B1A10" strokeWidth="2.5" fill="none" strokeLinecap="round" />
+      <path d="M46 69 q4 9 8 0 z" fill="#FF7A8A" />
+    </svg>
+  );
+}
+
+export function Bone({ size = 60 }: { size?: number }) {
+  return (
+    <svg width={size} height={size} viewBox="0 0 24 24" aria-hidden="true">
+      <path d="M6 9a3 3 0 1 1 3-3l6 6a3 3 0 1 1 3 3 3 3 0 1 1-3 3l-6-6a3 3 0 1 1-3-3z" fill="currentColor" />
+    </svg>
+  );
+}
