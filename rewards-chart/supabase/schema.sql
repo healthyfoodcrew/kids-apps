@@ -301,12 +301,22 @@ drop policy if exists "undo pending" on public.bonus_logs;
 create policy "undo pending" on public.bonus_logs for delete
   using (public.can_manage() or (public.is_member() and status = 'pending'));
 
+-- Nobody signed out can call any of these; trigger helpers only ever run as triggers.
+revoke execute on function public.is_member() from public, anon;
+revoke execute on function public.can_manage() from public, anon;
+revoke execute on function public.my_access() from public, anon;
+revoke execute on function public.unlock_parent_mode(text) from public, anon;
+revoke execute on function public.lock_parent_mode() from public, anon;
+revoke execute on function public.set_parent_pin(text) from public, anon;
+revoke execute on function public.completions_fill() from public, anon, authenticated;
+revoke execute on function public.bonus_logs_fill() from public, anon, authenticated;
+revoke execute on function public.adjustments_fill() from public, anon, authenticated;
+grant execute on function public.is_member() to authenticated;
+grant execute on function public.can_manage() to authenticated;
+grant execute on function public.my_access() to authenticated;
 grant execute on function public.unlock_parent_mode(text) to authenticated;
 grant execute on function public.lock_parent_mode() to authenticated;
 grant execute on function public.set_parent_pin(text) to authenticated;
-grant execute on function public.my_access() to authenticated;
-revoke execute on function public.unlock_parent_mode(text) from anon;
-revoke execute on function public.set_parent_pin(text) from anon;
 
 -- ─────────────────────────────────────────────────────────────
 -- Live updates between the iPad and phones

@@ -25,31 +25,26 @@ It's a web app built with React. The data lives in [Supabase](https://supabase.c
 
 ---
 
-## Set it up (about 20 minutes, once)
+## Set it up (about 15 minutes, once)
 
-### 1. Create the database (Supabase)
+### 1. Database — done ✓
 
-1. Go to [supabase.com](https://supabase.com), sign up (free), and click **New project**. For the region, pick **Sydney**.
-2. When it's ready, open **SQL Editor** → **New query**.
-3. Open [`supabase/schema.sql`](supabase/schema.sql) in this repo, copy all of it, paste it in, and click **Run**.
-4. Do the same with [`supabase/seed.sql`](supabase/seed.sql). This adds Tommy, Louie and their jobs.
+The database already lives in your Supabase project **Kids Apps**. It has the tables, the security rules, Tommy and Louie with their jobs, and the starting PIN 1234. The app is already pointed at it in `.env.production`.
+
+To rebuild it from scratch in another project, run [`supabase/schema.sql`](supabase/schema.sql) and then [`supabase/seed.sql`](supabase/seed.sql) in that project's SQL Editor.
 
 ### 2. Create the logins
 
-1. In Supabase, go to **Authentication** → **Users** → **Add user** → **Create new user**. Tick **Auto Confirm User** each time.
+1. In Supabase, open the **Kids Apps** project and go to **Authentication** → **Users** → **Add user** → **Create new user**. Tick **Auto Confirm User** each time.
    - One user for each parent, using your real emails.
-   - One user for the kids' iPad, for example `ipad@yourfamily.app` with a strong password. Nobody types this login except you, once, on the iPad.
-2. Open [`supabase/add-logins.sql`](supabase/add-logins.sql), change the three example emails to the ones you just made, paste it into the SQL Editor and **Run**. The last result should list all three logins.
+   - One user for the kids' iPad, for example `ipad@yourfamily.app` with a strong password.
+2. Link each login to its role. Either ask Claude, giving the three emails, or open [`supabase/add-logins.sql`](supabase/add-logins.sql), change the example emails, paste it into the SQL Editor and click **Run**.
 
 ### 3. Put the app online (Vercel)
 
-1. In Supabase, go to **Project Settings** → **API** and copy the **Project URL** and the **anon public** key.
-2. Go to [vercel.com](https://vercel.com), sign in with GitHub, and click **Add New → Project**. Import `healthyfoodcrew/kids-apps`.
-3. Set **Root Directory** to `rewards-chart`. The framework should show **Vite**.
-4. Under **Environment Variables**, add:
-   - `VITE_SUPABASE_URL` = the Project URL
-   - `VITE_SUPABASE_ANON_KEY` = the anon public key
-5. Click **Deploy**. You'll get a web address like `https://kids-apps-xxxx.vercel.app`.
+1. Go to [vercel.com](https://vercel.com), sign in with GitHub, and click **Add New → Project**. Import `healthyfoodcrew/kids-apps`.
+2. Set **Root Directory** to `rewards-chart`. The framework should show **Vite**. You don't need to add any environment variables.
+3. Click **Deploy**. You'll get a web address like `https://kids-apps-xxxx.vercel.app`.
 
 After this, every change pushed to GitHub updates the app automatically.
 
@@ -89,7 +84,7 @@ The starting parent PIN is **1234**. On your phone, go to **Settings → Parent 
 
 ```bash
 cd rewards-chart
-cp .env.example .env.local   # add your Supabase URL + anon key
+cp .env.production .env.local   # same Supabase project for local testing
 npm install
 npm run dev                  # http://localhost:5173
 npm test                     # game-maths tests
