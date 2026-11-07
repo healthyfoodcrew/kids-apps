@@ -4,7 +4,7 @@ import { Icon, UI_ICONS } from '../components/Icon';
 import { KidAvatar } from '../components/KidAvatar';
 import { summarizeKid, timerState } from '../lib/calc';
 import { useFamily, useNow } from '../lib/store';
-import { formatMoneyShort } from '../lib/time';
+import { formatMoneyShort, localParts } from '../lib/time';
 
 function darken(hex: string, amount = 0.35): string {
   const n = parseInt(hex.replace('#', ''), 16);
@@ -16,19 +16,43 @@ export function PlayerPick() {
   const { data, loading } = useFamily();
   const now = useNow(1000);
   const timer = timerState(data.settings, now);
-  const mm = Math.floor(timer.secondsLeft / 60);
-  const ss = String(timer.secondsLeft % 60).padStart(2, '0');
+  const tz = data.settings.timezone;
+  const local = localParts(now, tz);
+  const hour = local.secondsOfDay / 3600;
+  const greeting = hour < 12 ? 'Good morning' : hour < 17 ? 'Good afternoon' : 'Good evening';
+  const clock = now.toLocaleTimeString('en-AU', { hour: 'numeric', minute: '2-digit', timeZone: tz }).replace(' ', '').toLowerCase();
+  const weekday = now.toLocaleDateString('en-AU', { weekday: 'long', timeZone: tz });
+  const mins = Math.ceil(timer.secondsLeft / 60);
+
+  // The line under the greeting depends on the day and the countdown.
+  let line: string;
+  if (timer.phase === 'none') {
+    line = timer.schoolDay
+      ? hour < 15
+        ? 'Have an awesome day at school!'
+        : 'Welcome home! Time for evening quests.'
+      : `No school today. Happy ${weekday}!`;
+  } else if (timer.secondsLeft === 0) {
+    line = "It's time to leave for school. Shoes on, let's go!";
+  } else if (mins <= 1) {
+    line = 'Less than a minute until it’s time to leave for school!';
+  } else {
+    line = `There ${mins === 1 ? 'is' : 'are'} only ${mins} minutes until it's time to leave for school!`;
+  }
+  const lineColor =
+    timer.phase === 'bonus' ? '#5BD45B' : timer.phase === 'move' ? '#FFC94A' : timer.phase === 'none' ? '#B9B6E8' : '#FF6B6B';
 
   return (
     <main className="pick">
       <div className="pick-top">
-        {timer.phase !== 'none' && (
-          <span className="leave-pill" style={{ background: timer.phase === 'bonus' ? '#5BD45B' : timer.phase === 'move' ? '#FFC94A' : '#FF6B6B' }}>
-            <Icon d={UI_ICONS.clock} size={18} strokeWidth={2.4} />
-            {timer.secondsLeft > 0 ? `LEAVE FOR SCHOOL IN ${mm}:${ss}` : 'TIME TO GO!'}
-          </span>
-        )}
-        <h1>CHOOSE YOUR PLAYER</h1>
+        <div className="greeting">
+          {greeting}! It's <span className="greeting-time">{clock}</span>
+        </div>
+        <div className="greeting-line" style={{ color: lineColor }}>
+          {timer.phase !== 'none' && <Icon d={UI_ICONS.clock} size={22} strokeWidth={2.4} />}
+          {line}
+        </div>
+        <h1 className="choose">CHOOSE YOUR PLAYER</h1>
       </div>
 
       <div className="pick-grid">
@@ -59,7 +83,7 @@ export function PlayerPick() {
                 <div className="bar"><div style={{ width: `${pct}%` }} /></div>
                 <div className="sub">
                   <span>Quests today {s.doneCount}/{s.totalCount}</span>
-                  <span>{s.tech.ban ? 'Tech time dead' : `Tech ${s.tech.total} min this week`}</span>
+                  <span>{s.tech.ban ? 'Tech time dead' : `Tech ${s.tech.total} min`}</span>
                 </div>
               </div>
               <div className="cta">PLAY AS {kid.name.toUpperCase()}</div>

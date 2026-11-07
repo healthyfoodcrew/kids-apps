@@ -327,6 +327,10 @@ button:disabled { cursor: default; }
 .pick { min-height: 100vh; min-height: 100dvh; padding: 40px max(28px, 4vw); display: flex; flex-direction: column; align-items: center; justify-content: center; gap: 32px; }
 .pick-top { text-align: center; display: flex; flex-direction: column; align-items: center; gap: 10px; }
 .pick-top h1 { margin: 0; font-family: var(--display); font-weight: 400; font-size: clamp(40px, 6vw, 64px); line-height: 1; letter-spacing: 0.02em; }
+.greeting { font-family: var(--display); font-size: clamp(36px, 5.5vw, 58px); line-height: 1.05; letter-spacing: 0.01em; }
+.greeting-time { color: var(--gold); white-space: nowrap; }
+.greeting-line { display: flex; align-items: center; justify-content: center; gap: 8px; font-size: clamp(17px, 2.4vw, 22px); font-weight: 900; max-width: 760px; }
+.pick-top h1.choose { font-size: 22px; letter-spacing: 0.12em; color: var(--muted); margin-top: 10px; }
 .leave-pill { display: inline-flex; align-items: center; gap: 8px; padding: 6px 14px; border-radius: 999px; color: var(--ink); font-size: 15px; font-weight: 900; background: var(--green); }
 .pick-grid { width: 100%; max-width: 1000px; display: grid; grid-template-columns: repeat(auto-fit, minmax(280px, 1fr)); gap: 28px; align-items: start; }
 .player {
