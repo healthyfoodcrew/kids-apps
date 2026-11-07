@@ -47,7 +47,7 @@ button:disabled { cursor: default; }
 
 /* ───────────────────────── Kid screens ───────────────────────── */
 .kid-screen {
-  min-height: 100dvh;
+  min-height: 100vh; min-height: 100dvh;
   padding: max(20px, env(safe-area-inset-top)) max(28px, env(safe-area-inset-right)) max(20px, env(safe-area-inset-bottom)) max(28px, env(safe-area-inset-left));
   background: var(--ink);
   color: #fff;
@@ -168,6 +168,7 @@ button:disabled { cursor: default; }
 /* Timer */
 .timer { border: 3px solid var(--phase); display: flex; flex-direction: column; align-items: center; justify-content: space-between; gap: 8px; text-align: center; }
 .timer-ring { position: relative; width: 132px; height: 132px; }
+.timer-ring svg { width: 100%; height: 100%; }
 .timer-ring .centre { position: absolute; inset: 0; display: flex; flex-direction: column; align-items: center; justify-content: center; line-height: 1; }
 .timer-ring .mins { font-family: var(--display); font-size: 46px; }
 .timer-ring .unit { font-size: 14px; font-weight: 900; color: var(--muted); }
@@ -247,6 +248,32 @@ button:disabled { cursor: default; }
   background: rgba(18, 15, 58, 0.18); color: var(--ink); font-size: 12px; font-weight: 900;
 }
 
+/* Compact layout for smaller iPads (e.g. 10.2" in Safari) so a whole kid screen fits without scrolling */
+@media (orientation: portrait) and (max-height: 1120px), (orientation: landscape) and (max-height: 860px) {
+  .kid-screen { gap: 10px; padding-top: max(14px, env(safe-area-inset-top)); padding-bottom: max(12px, env(safe-area-inset-bottom)); }
+  .kid-grid { gap: 10px 14px; }
+  .avatar { width: 56px; height: 56px; font-size: 30px; border-radius: 16px; }
+  .kid-hello h1 { font-size: 34px; }
+  .switch-btn { height: 56px; }
+  .panel { padding: 12px 16px; }
+  .money-top .to-go { padding: 6px 14px; }
+  .money-amount .big { font-size: 56px; }
+  .to-go .big { font-size: 30px; }
+  .timer-ring { width: 104px; height: 104px; }
+  .timer-ring .mins { font-size: 36px; }
+  .phase-chip { font-size: 17px; padding: 4px 12px; }
+  .quests-head { margin-bottom: 6px; }
+  .quests-head h2 { font-size: 26px; }
+  .quest { min-height: 136px; padding: 12px; gap: 8px; }
+  .quest .icon-box { width: 50px; height: 50px; border-radius: 14px; }
+  .quest .icon-box svg { width: 32px; height: 32px; }
+  .quest .title { font-size: 21px; }
+  .quest .stamp { width: 34px; height: 34px; top: 10px; right: 10px; }
+  .tech .mins .big { font-size: 46px; }
+  .bonus-btn { min-height: 96px; }
+  .bonus-btn svg { width: 28px; height: 28px; }
+}
+
 /* Toast + celebration */
 .toast {
   position: fixed; left: 50%; bottom: 28px; transform: translateX(-50%);
@@ -275,11 +302,11 @@ button:disabled { cursor: default; }
 @media (prefers-reduced-motion: reduce) { *, *::before, *::after { animation: none !important; transition: none !important; } }
 
 /* Player picker */
-.pick { min-height: 100dvh; padding: 40px max(28px, 4vw); display: flex; flex-direction: column; align-items: center; gap: 30px; }
+.pick { min-height: 100vh; min-height: 100dvh; padding: 40px max(28px, 4vw); display: flex; flex-direction: column; align-items: center; justify-content: center; gap: 32px; }
 .pick-top { text-align: center; display: flex; flex-direction: column; align-items: center; gap: 10px; }
 .pick-top h1 { margin: 0; font-family: var(--display); font-weight: 400; font-size: clamp(40px, 6vw, 64px); line-height: 1; letter-spacing: 0.02em; }
 .leave-pill { display: inline-flex; align-items: center; gap: 8px; padding: 6px 14px; border-radius: 999px; color: var(--ink); font-size: 15px; font-weight: 900; background: var(--green); }
-.pick-grid { width: 100%; max-width: 1100px; flex: 1; display: grid; grid-template-columns: repeat(auto-fit, minmax(280px, 1fr)); gap: 32px; }
+.pick-grid { width: 100%; max-width: 1000px; display: grid; grid-template-columns: repeat(auto-fit, minmax(280px, 1fr)); gap: 28px; align-items: start; }
 .player {
   display: flex; flex-direction: column; align-items: center; gap: 14px;
   padding: 30px 32px 26px; border-radius: 32px; text-decoration: none; color: #fff;
@@ -289,7 +316,7 @@ button:disabled { cursor: default; }
 .player .face { width: 130px; height: 130px; border-radius: 34px; display: flex; align-items: center; justify-content: center; font-family: var(--display); font-size: 72px; color: var(--ink); background: var(--kid); transform: rotate(-4deg); }
 .player .name { font-family: var(--display); font-size: 50px; line-height: 1; }
 .player .lvl { padding: 6px 16px; border-radius: 999px; font-size: 15px; font-weight: 900; letter-spacing: 0.08em; color: var(--ink); background: var(--kid); }
-.player .stats { width: 100%; display: flex; flex-direction: column; gap: 8px; margin-top: auto; }
+.player .stats { width: 100%; display: flex; flex-direction: column; gap: 8px; margin-top: 10px; }
 .player .row { display: flex; justify-content: space-between; align-items: baseline; font-weight: 800; }
 .player .row .cash { font-family: var(--display); font-size: 38px; color: var(--gold); line-height: 1; }
 .player .bar { height: 16px; border-radius: 999px; background: var(--panel-2); overflow: hidden; }
@@ -299,7 +326,7 @@ button:disabled { cursor: default; }
 .parents-link { display: inline-flex; align-items: center; gap: 8px; min-height: 44px; padding: 0 18px; border-radius: 12px; border: 1px solid var(--edge); background: transparent; color: var(--muted); font-weight: 700; text-decoration: none; }
 
 /* PIN pad */
-.pin-screen { min-height: 100dvh; display: flex; flex-direction: column; align-items: center; justify-content: center; gap: 22px; padding: 24px; }
+.pin-screen { min-height: 100vh; min-height: 100dvh; display: flex; flex-direction: column; align-items: center; justify-content: center; gap: 22px; padding: 24px; }
 .pin-screen h1 { margin: 0; font-family: var(--display); font-weight: 400; font-size: 40px; }
 .pin-dots { display: flex; gap: 16px; }
 .pin-dots span { width: 22px; height: 22px; border-radius: 50%; border: 3px solid var(--muted); }
@@ -312,14 +339,14 @@ button:disabled { cursor: default; }
 @keyframes shake { 25% { transform: translateX(-10px); } 75% { transform: translateX(10px); } }
 
 /* Full-page messages (setup, loading) */
-.message-page { min-height: 100dvh; display: flex; align-items: center; justify-content: center; padding: 24px; }
+.message-page { min-height: 100vh; min-height: 100dvh; display: flex; align-items: center; justify-content: center; padding: 24px; }
 .message-card { max-width: 520px; background: var(--panel); border-radius: 24px; padding: 28px; display: flex; flex-direction: column; gap: 12px; line-height: 1.5; }
 .message-card h1 { margin: 0; font-family: var(--display); font-weight: 400; font-size: 32px; }
 .message-card code { background: var(--panel-2); padding: 2px 6px; border-radius: 6px; }
 
 /* ───────────────────────── Parent screens ───────────────────────── */
 .parent {
-  min-height: 100dvh; background: var(--p-bg); color: var(--p-ink);
+  min-height: 100vh; min-height: 100dvh; background: var(--p-bg); color: var(--p-ink);
   font-family: -apple-system, 'Inter', system-ui, sans-serif;
   display: flex; flex-direction: column;
 }
@@ -412,7 +439,7 @@ button:disabled { cursor: default; }
 .p-nav a { display: flex; flex-direction: column; align-items: center; gap: 4px; min-height: 44px; padding-top: 6px; font-size: 12px; font-weight: 600; text-decoration: none; color: var(--p-muted); }
 .p-nav a.active { color: var(--p-blue-ink); }
 
-.p-login { min-height: 100dvh; display: flex; align-items: center; justify-content: center; padding: 24px; background: var(--ink); }
+.p-login { min-height: 100vh; min-height: 100dvh; display: flex; align-items: center; justify-content: center; padding: 24px; background: var(--ink); }
 .p-login form { width: 100%; max-width: 380px; background: #fff; color: var(--p-ink); border-radius: 24px; padding: 26px; display: flex; flex-direction: column; gap: 14px; }
 .p-login h1 { margin: 0; font-family: var(--display); font-weight: 400; font-size: 34px; color: var(--ink); }
 .p-login p { margin: 0; color: var(--p-muted); font-size: 14px; line-height: 1.5; }
