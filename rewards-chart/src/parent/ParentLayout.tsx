@@ -4,10 +4,10 @@ import { Icon, UI_ICONS } from '../components/Icon';
 import { useAuth, useNow } from '../lib/store';
 
 const TABS = [
-  { to: '/parent', label: 'Home', icon: UI_ICONS.home, end: true },
-  { to: '/parent/jobs', label: 'Jobs', icon: UI_ICONS.list, end: false },
+  { to: '/parent', label: 'Today', icon: UI_ICONS.home, end: true },
   { to: '/parent/adjust', label: 'Give / take', icon: UI_ICONS.plusminus, end: false },
-  { to: '/parent/settings', label: 'Settings', icon: UI_ICONS.settings, end: false },
+  { to: '/parent/payday', label: 'Pay day', icon: UI_ICONS.wallet, end: false },
+  { to: '/parent/setup', label: 'Setup', icon: UI_ICONS.settings, end: false },
 ];
 
 export function ParentLayout({ children }: { children: ReactNode }) {

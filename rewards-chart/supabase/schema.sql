@@ -28,7 +28,7 @@ create table if not exists public.settings (
   speed_bonus_minutes int not null default 15,           -- finish this early for the speed bonus
   speed_bonus_stars int not null default 20,
   stars_per_dollar int not null default 30,
-  bonus_tech_minutes int not null default 10,            -- tech minutes per approved bonus job
+  bonus_tech_minutes int not null default 10,            -- extra tech minutes this week per approved bonus job
   updated_at timestamptz not null default now()
 );
 
@@ -44,7 +44,7 @@ create table if not exists public.kids (
   age int,
   color text not null default '#2EE6D6',
   weekly_pocket_money numeric(6,2) not null default 8 check (weekly_pocket_money >= 0),
-  daily_tech_minutes int not null default 30 check (daily_tech_minutes >= 0),
+  weekly_tech_minutes int not null default 210 check (weekly_tech_minutes >= 0),  -- tech time per week (Mon–Sun)
   sort int not null default 0,
   created_at timestamptz not null default now()
 );
@@ -345,3 +345,13 @@ on conflict (id) do update set public = false;
 drop policy if exists "family can view avatars" on storage.objects;
 create policy "family can view avatars" on storage.objects for select to authenticated
   using (bucket_id = 'avatars' and public.is_member());
+
+-- Older installs: tech time used to be daily; it is now a weekly allowance.
+do $$
+begin
+  if exists (select 1 from information_schema.columns
+             where table_schema = 'public' and table_name = 'kids' and column_name = 'daily_tech_minutes') then
+    alter table public.kids rename column daily_tech_minutes to weekly_tech_minutes;
+    update public.kids set weekly_tech_minutes = weekly_tech_minutes * 7;
+  end if;
+end $$;

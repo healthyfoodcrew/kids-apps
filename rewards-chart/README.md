@@ -3,7 +3,11 @@
 A game-style chores and pocket-money app for Tommy and Louie.
 
 - **Kids' iPad:** pick a player, tick off morning quests, log bonus jobs, and watch the dollar cards tick over. It also shows the leave-for-school countdown (with a speed bonus) and today's tech time.
-- **Parents' phones:** approve bonus jobs, give or take away money, tech time or stars (with a reason), edit each child's jobs, set pocket money, mark pay day, and change the PIN.
+- **Parents' phones:** four tabs.
+  - **Today:** bonus jobs waiting for a thumbs up, and how each child is tracking.
+  - **Give / take:** add or remove money, tech time or stars, with a reason.
+  - **Pay day:** tick off each Sunday's pocket money and see any missed Sundays.
+  - **Setup:** jobs, pocket money, characters, school mornings and the PIN.
 - Everything stays in sync between the iPad and your phones.
 
 It's a web app built with React. The data lives in [Supabase](https://supabase.com) (free plan), and the app is hosted for free on [Vercel](https://vercel.com).
@@ -14,12 +18,12 @@ It's a web app built with React. The data lives in [Supabase](https://supabase.c
 
 | Thing | How it works | Change it in |
 |---|---|---|
-| Morning quests | Each child has their own list. Each one ticked is worth stars (10 by default). | Parent → Jobs |
-| Bonus jobs | Kids tap them on the iPad, then a parent approves. Each one is worth stars plus 10 min tech time, and can be done up to 3× a week. | Parent → Jobs |
-| Pocket money | $1 for every 30 stars, up to each child's weekly amount. The week runs Monday to Sunday and is paid Sunday. | Parent → Settings |
+| Morning quests | Each child has their own list. Each one ticked is worth stars (10 by default). | Parent → Setup › Jobs |
+| Bonus jobs | Kids tap them on the iPad, then a parent approves. Each one is worth stars plus 10 min tech time, and can be done up to 3× a week. | Parent → Setup › Jobs |
+| Pocket money | $1 for every 30 stars, up to each child's weekly amount. The week runs Monday to Sunday and is paid Sunday. | Parent → Setup › Kids |
 | Dollar cards | One card per dollar. Earned dollars get a tick. The next dollar shows its star progress. Dollars taken away are marked TAKEN. | — |
-| Tech time | A daily allowance (30 min), plus minutes from bonus jobs approved today, minus anything taken away. It shows as locked until the morning quests are done. | Parent → Settings |
-| School countdown | Counts down to leave time (8:15am) on school days. Finish every quest 15+ minutes early for +20 bonus stars. | Parent → Settings |
+| Tech time | A weekly allowance (210 min, set per child), plus 10 min for each bonus job approved that week, minus anything taken away. It starts again every Monday, and it shows as locked each day until the morning quests are done. | Parent → Setup › Kids |
+| School countdown | Counts down to leave time (8:15am) on school days. Finish every quest 15+ minutes early for +20 bonus stars. | Parent → Setup › School mornings |
 | Give / take away | Parents can add or remove pocket money (50c steps), tech time (5 min steps) or stars, with a reason the kids can see. | Parent → Give / take |
 | Levels & streaks | Every 150 stars ever earned is a new level. A streak is the number of days in a row with every quest done. | — |
 
@@ -67,13 +71,13 @@ You land on Family HQ.
 
 ### 6. Change the PIN
 
-The starting parent PIN is **1234**. On your phone, go to **Settings → Parent PIN** and change it. The **Parents** button on the iPad asks for this PIN, and it opens parent mode for 15 minutes. After 5 wrong tries the PIN locks for 5 minutes.
+The starting parent PIN is **1234**. On your phone, go to **Setup → Parent PIN** and change it. The **Parents** button on the iPad asks for this PIN, and it opens parent mode for 15 minutes. After 5 wrong tries the PIN locks for 5 minutes.
 
 ---
 
 ## Game-character pictures
 
-On a parent's phone, go to **Settings**, find a child, and tap **Upload a photo**. Pick a style (Action hero, Sci-fi armour, Explorer or Space ranger) and tap **Make … a game character**. After about a minute you'll see the result; tap **Use this one** and it shows on the iPad straight away. If you don't like it, tap **Try again**.
+On a parent's phone, go to **Setup → Kids, pocket money & characters**, find a child, and tap **Upload a photo**. Pick a style (Action hero, Sci-fi armour, Explorer or Space ranger) and tap **Make … a game character**. After about a minute you'll see the result; tap **Use this one** and it shows on the iPad straight away. If you don't like it, tap **Try again**.
 
 - The photo goes to OpenAI's image service to draw the character. The photo itself is never saved; only the finished picture is, in a private store that only your family's logins can see.
 - This needs an OpenAI API key. Create one at [platform.openai.com/api-keys](https://platform.openai.com/api-keys) and add some credit. Each picture costs a few cents. Add the key in Supabase → **Edge Functions** → **Secrets** with the name `OPENAI_API_KEY`.

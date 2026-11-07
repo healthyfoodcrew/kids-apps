@@ -19,10 +19,10 @@ export interface BonusJobState {
 }
 
 export interface TechState {
-  base: number;
-  earned: number; // from approved bonus jobs today
-  given: number; // parent top-ups today
-  taken: number; // parent deductions today (positive number)
+  base: number; // weekly allowance
+  earned: number; // from approved bonus jobs this week
+  given: number; // parent top-ups this week
+  taken: number; // parent deductions this week (positive number)
   total: number;
   takenReasons: Adjustment[];
 }
@@ -119,6 +119,93 @@ export function streakFor(kidId: string, today: string, jobs: Job[], completions
   return streak;
 }
 
+export interface WeekMoney {
+  weekStars: number;
+  earnedDollars: number;
+  moneyAdjust: number;
+  money: number;
+  target: number;
+  toGo: number;
+  starsToNextDollar: number;
+  coinsTotal: number;
+  moneyTaken: Adjustment[];
+}
+
+/**
+ * Pocket money for one week (Monday `ws` to Sunday), counting up to `upTo`.
+ * $1 per `stars_per_dollar` stars, up to the weekly amount, then any money given or taken away.
+ */
+export function weekMoney(kid: Kid, data: FamilyData, ws: string, upTo = addDays(ws, 6)): WeekMoney {
+  const { settings, jobs } = data;
+  const completions = data.completions.filter((c) => c.kid_id === kid.id && inWeek(c.day, ws));
+  const logs = data.bonusLogs.filter((b) => b.kid_id === kid.id && inWeek(b.day, ws));
+  const adj = data.adjustments.filter((a) => a.kid_id === kid.id && inWeek(a.day, ws));
+  const last = upTo < addDays(ws, 6) ? upTo : addDays(ws, 6);
+
+  let speedBonuses = 0;
+  for (let d = ws; d <= last; d = addDays(d, 1)) {
+    if (earnedSpeedBonus(kid.id, d, jobs, completions, settings)) speedBonuses++;
+  }
+  const weekStars =
+    sum(completions.map((c) => c.stars)) +
+    sum(logs.filter((b) => b.status === 'approved').map((b) => b.stars)) +
+    speedBonuses * settings.speed_bonus_stars +
+    sum(adj.filter((a) => a.kind === 'stars').map((a) => Number(a.amount)));
+
+  const target = Number(kid.weekly_pocket_money);
+  const spd = Math.max(1, settings.stars_per_dollar);
+  const counted = Math.max(0, weekStars);
+  const earnedDollars = Math.min(target, Math.floor(counted / spd));
+  const moneyAdj = adj.filter((a) => a.kind === 'money');
+  const moneyAdjust = sum(moneyAdj.map((a) => Number(a.amount)));
+  const money = Math.max(0, Math.round((earnedDollars + moneyAdjust) * 100) / 100);
+  return {
+    weekStars,
+    earnedDollars,
+    moneyAdjust,
+    money,
+    target,
+    toGo: Math.max(0, Math.round((target - money) * 100) / 100),
+    starsToNextDollar: earnedDollars >= target ? 0 : spd - (counted % spd),
+    coinsTotal: Math.ceil(target),
+    moneyTaken: moneyAdj.filter((a) => a.amount < 0),
+  };
+}
+
+export interface PayWeek {
+  weekStart: string; // Monday
+  payday: string; // Sunday
+  amount: number; // what was earned that week
+  payout?: Payout;
+  status: 'paid' | 'due' | 'missed' | 'in-progress' | 'none'; // none = nothing earned, nothing to pay
+}
+
+/**
+ * Week-by-week pay record, newest first. A week becomes "due" on its Sunday,
+ * and "missed" once that Sunday has passed without being ticked off.
+ */
+export function payHistory(kid: Kid, data: FamilyData, now: Date, weeks = 8): PayWeek[] {
+  const today = localParts(now, data.settings.timezone).day;
+  const thisWeek = weekStart(today);
+  const firstWeek = kid.created_at ? weekStart(localParts(new Date(kid.created_at), data.settings.timezone).day) : addDays(thisWeek, -7 * (weeks - 1));
+  const out: PayWeek[] = [];
+  for (let i = 0; i < weeks; i++) {
+    const ws = addDays(thisWeek, -7 * i);
+    if (ws < firstWeek) break;
+    const payday = addDays(ws, 6);
+    const payout = data.payouts.find((p) => p.kid_id === kid.id && p.week_start === ws);
+    const amount = weekMoney(kid, data, ws, today).money;
+    let status: PayWeek['status'];
+    if (payout) status = 'paid';
+    else if (today < payday) status = 'in-progress';
+    else if (amount <= 0) status = 'none';
+    else if (today === payday) status = 'due';
+    else status = 'missed';
+    out.push({ weekStart: ws, payday, amount, payout, status });
+  }
+  return out;
+}
+
 export function summarizeKid(kid: Kid, data: FamilyData, now: Date): KidSummary {
   const { settings, jobs } = data;
   const today = localParts(now, settings.timezone).day;
@@ -147,44 +234,22 @@ export function summarizeKid(kid: Kid, data: FamilyData, now: Date): KidSummary 
     };
   });
 
-  // Stars this week: ticked jobs + approved bonus jobs + speed bonuses + parent star adjustments.
-  let speedBonuses = 0;
-  for (let d = ws; d <= today; d = addDays(d, 1)) {
-    if (earnedSpeedBonus(kid.id, d, jobs, completions, settings)) speedBonuses++;
-  }
-  const weekStars =
-    sum(completions.filter((c) => inWeek(c.day, ws)).map((c) => c.stars)) +
-    sum(weekLogs.filter((b) => b.status === 'approved').map((b) => b.stars)) +
-    speedBonuses * settings.speed_bonus_stars +
-    sum(adjustments.filter((a) => a.kind === 'stars' && inWeek(a.day, ws)).map((a) => Number(a.amount)));
+  const m = weekMoney(kid, data, ws, today);
+  const { weekStars, earnedDollars, moneyAdjust, money, target, toGo, starsToNextDollar, coinsTotal } = m;
   const pendingStars = sum(weekLogs.filter((b) => b.status === 'pending').map((b) => b.stars));
 
-  // Pocket money: $1 per `stars_per_dollar` stars, up to the weekly amount, then any money given/taken.
-  const target = Number(kid.weekly_pocket_money);
-  const spd = Math.max(1, settings.stars_per_dollar);
-  const countedStars = Math.max(0, weekStars);
-  const earnedDollars = Math.min(target, Math.floor(countedStars / spd));
-  const weekMoneyAdj = adjustments.filter((a) => a.kind === 'money' && inWeek(a.day, ws));
-  const moneyAdjust = sum(weekMoneyAdj.map((a) => Number(a.amount)));
-  const money = Math.max(0, Math.round((earnedDollars + moneyAdjust) * 100) / 100);
-  const toGo = Math.max(0, Math.round((target - money) * 100) / 100);
-  const starsToNextDollar = earnedDollars >= target ? 0 : spd - (countedStars % spd);
-  const coinsTotal = Math.ceil(target);
-
-  // Tech time is a daily allowance.
-  const todayTech = adjustments.filter((a) => a.kind === 'tech' && a.day === today);
-  const techEarned = sum(
-    bonusLogs.filter((b) => b.day === today && b.status === 'approved').map((b) => b.tech_minutes),
-  );
-  const techGiven = sum(todayTech.filter((a) => a.amount > 0).map((a) => Number(a.amount)));
-  const techTaken = -sum(todayTech.filter((a) => a.amount < 0).map((a) => Number(a.amount)));
+  // Tech time is a weekly allowance that starts again every Monday.
+  const weekTech = adjustments.filter((a) => a.kind === 'tech' && inWeek(a.day, ws));
+  const techEarned = sum(weekLogs.filter((b) => b.status === 'approved').map((b) => b.tech_minutes));
+  const techGiven = sum(weekTech.filter((a) => a.amount > 0).map((a) => Number(a.amount)));
+  const techTaken = -sum(weekTech.filter((a) => a.amount < 0).map((a) => Number(a.amount)));
   const tech: TechState = {
-    base: kid.daily_tech_minutes,
+    base: kid.weekly_tech_minutes,
     earned: techEarned,
     given: techGiven,
     taken: techTaken,
-    total: Math.max(0, kid.daily_tech_minutes + techEarned + techGiven - techTaken),
-    takenReasons: todayTech.filter((a) => a.amount < 0),
+    total: Math.max(0, kid.weekly_tech_minutes + techEarned + techGiven - techTaken),
+    takenReasons: weekTech.filter((a) => a.amount < 0),
   };
 
   const lifetimeStars = Math.max(
@@ -214,7 +279,7 @@ export function summarizeKid(kid: Kid, data: FamilyData, now: Date): KidSummary 
     starsToNextDollar,
     coinsTotal,
     coinsFilled: Math.min(coinsTotal, Math.floor(money)),
-    moneyTaken: weekMoneyAdj.filter((a) => a.amount < 0),
+    moneyTaken: m.moneyTaken,
     tech,
     lifetimeStars,
     level: Math.floor(lifetimeStars / STARS_PER_LEVEL) + 1,

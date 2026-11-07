@@ -8,7 +8,8 @@ import { supabase } from './lib/supabase';
 import { Adjust } from './parent/Adjust';
 import { ParentHome } from './parent/Home';
 import { Jobs } from './parent/Jobs';
-import { SettingsScreen } from './parent/Settings';
+import { Payday } from './parent/Payday';
+import { KidsSettings, PinSettings, RulesSettings, SetupMenu } from './parent/Settings';
 
 function MessagePage({ title, children }: { title: string; children: ReactNode }) {
   return (
@@ -60,9 +61,13 @@ function ParentRoutes() {
   return (
     <Routes>
       <Route index element={<ParentHome />} />
-      <Route path="jobs" element={<Jobs />} />
       <Route path="adjust" element={<Adjust />} />
-      <Route path="settings" element={<SettingsScreen />} />
+      <Route path="payday" element={<Payday />} />
+      <Route path="setup" element={<SetupMenu />} />
+      <Route path="setup/jobs" element={<Jobs />} />
+      <Route path="setup/kids" element={<KidsSettings />} />
+      <Route path="setup/rules" element={<RulesSettings />} />
+      <Route path="setup/pin" element={<PinSettings />} />
       <Route path="*" element={<Navigate to="/parent" replace />} />
     </Routes>
   );

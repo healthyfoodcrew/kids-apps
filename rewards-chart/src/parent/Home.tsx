@@ -1,72 +1,61 @@
 import { useState } from 'react';
 import { Link } from 'react-router-dom';
 import { Icon, UI_ICONS } from '../components/Icon';
-import { pendingBonusLogs, summarizeKid } from '../lib/calc';
+import { payHistory, pendingBonusLogs, summarizeKid } from '../lib/calc';
 import { useFamily, useNow } from '../lib/store';
-import { addDays, formatMoney, formatMoneyShort } from '../lib/time';
+import { formatMoney, formatMoneyShort } from '../lib/time';
 import { KidDot, ParentLayout, inkOf } from './ParentLayout';
 
 function when(iso: string): string {
-  return new Date(iso).toLocaleString(undefined, { weekday: 'short', hour: 'numeric', minute: '2-digit' });
+  return new Date(iso).toLocaleString('en-AU', { weekday: 'short', hour: 'numeric', minute: '2-digit' });
 }
 
+/** "Today": what needs a parent right now, and how each child is tracking. */
 export function ParentHome() {
-  const { data, loading, error, reviewBonus, removeAdjustment, recordPayout, undoPayout } = useFamily();
+  const { data, loading, error, reviewBonus } = useFamily();
   const now = useNow(30_000);
-  const [msg, setMsg] = useState<{ kind: 'ok' | 'err'; text: string } | null>(null);
   const [busy, setBusy] = useState<string | null>(null);
+  const [msg, setMsg] = useState<string | null>(null);
 
   const summaries = data.kids.map((k) => summarizeKid(k, data, now));
-  const ws = summaries[0]?.weekStart;
   const pending = pendingBonusLogs(data);
   const kidById = new Map(data.kids.map((k) => [k.id, k]));
   const jobById = new Map(data.jobs.map((j) => [j.id, j]));
-  const recent = data.adjustments.slice(0, 6);
 
-  async function act(id: string, op: () => Promise<string | null>, ok?: string) {
+  const owing = data.kids.flatMap((k) => payHistory(k, data, now, 8).filter((w) => w.status === 'due' || w.status === 'missed'));
+  const owedTotal = owing.reduce((a, w) => a + w.amount, 0);
+  const missed = owing.filter((w) => w.status === 'missed').length;
+
+  async function review(id: string, status: 'approved' | 'rejected') {
     setBusy(id);
-    const err = await op();
+    const err = await reviewBonus(id, status);
     setBusy(null);
-    setMsg(err ? { kind: 'err', text: err } : ok ? { kind: 'ok', text: ok } : null);
+    setMsg(err);
   }
 
   return (
     <ParentLayout>
       <header className="p-head">
-        <div>
-          <div className="sub">{ws ? `Week of ${ws.slice(8)}/${ws.slice(5, 7)} – ${addDays(ws, 6).slice(8)}/${addDays(ws, 6).slice(5, 7)}` : ''}</div>
-          <h1>Family HQ</h1>
-        </div>
-        <Link to="/parent/settings" className="p-icon-btn" aria-label="Settings">
-          <Icon d={UI_ICONS.settings} size={22} strokeWidth={1.6} />
-        </Link>
+        <h1>Today</h1>
       </header>
 
       {error && <div className="p-msg err">{error}</div>}
-      {msg && <div className={`p-msg ${msg.kind}`} role="status">{msg.text}</div>}
+      {msg && <div className="p-msg err" role="alert">{msg}</div>}
       {loading && <div className="p-empty">Loading…</div>}
 
-      <div className="p-grid2">
-        {summaries.map((s) => (
-          <div key={s.kid.id} className="p-card p-kid">
-            <div className="name"><KidDot name={s.kid.name} color={inkOf(s.kid.color)} />{s.kid.name}</div>
-            <div className="amt">{formatMoneyShort(s.money)}<small> / {formatMoneyShort(s.target)}</small></div>
-            <div className="p-bar"><div style={{ width: `${s.target ? Math.min(100, (s.money / s.target) * 100) : 0}%`, background: inkOf(s.kid.color) }} /></div>
-            <div className="line">Morning jobs <b>{s.doneCount}/{s.totalCount}</b></div>
-            <div className="line">Tech time today <b>{s.tech.total} min</b></div>
-            <div className="line">Stars this week <b>{Math.max(0, s.weekStars)}</b>{s.pendingStars > 0 ? ` (+${s.pendingStars} waiting)` : ''}</div>
-          </div>
-        ))}
-      </div>
+      {owing.length > 0 && (
+        <Link to="/parent/payday" className="p-banner" style={{ textDecoration: 'none' }}>
+          <Icon d={UI_ICONS.wallet} size={22} />
+          <span className="grow">
+            {missed ? `${missed} missed pay day${missed === 1 ? '' : 's'}` : "It's pay day!"} · {formatMoney(owedTotal)} to pay
+          </span>
+          <span style={{ fontWeight: 800 }}>Tick off ›</span>
+        </Link>
+      )}
 
-      <section className="p-section">
-        <div className="p-head">
-          <h2 style={{ margin: 0, fontSize: 17 }}>Needs a thumbs up</h2>
-          <span className="sub">{pending.length} waiting</span>
-        </div>
-        {pending.length === 0 ? (
-          <div className="p-card p-empty">Nothing waiting. Bonus jobs the boys log show up here.</div>
-        ) : (
+      {pending.length > 0 && (
+        <section className="p-section">
+          <h2>Thumbs up needed ({pending.length})</h2>
           <div className="p-list">
             {pending.map((b) => {
               const kid = kidById.get(b.kid_id);
@@ -78,93 +67,45 @@ export function ParentHome() {
                     <div className="t">{job?.title ?? 'Bonus job'}</div>
                     <div className="m">{kid?.name} · {when(b.created_at)} · +{b.stars} stars, +{b.tech_minutes} min</div>
                   </div>
-                  <button
-                    className="p-icon-btn"
-                    aria-label={`Not done: ${job?.title}`}
-                    disabled={busy === b.id}
-                    onClick={() => act(b.id, () => reviewBonus(b.id, 'rejected'))}
-                  >
+                  <button className="p-icon-btn" aria-label={`Not done: ${job?.title}`} disabled={busy === b.id} onClick={() => review(b.id, 'rejected')}>
                     <Icon d={UI_ICONS.close} size={18} strokeWidth={2.2} />
                   </button>
-                  <button
-                    className="p-icon-btn primary"
-                    aria-label={`Approve: ${job?.title}`}
-                    disabled={busy === b.id}
-                    onClick={() => act(b.id, () => reviewBonus(b.id, 'approved'))}
-                  >
+                  <button className="p-icon-btn primary" aria-label={`Approve: ${job?.title}`} disabled={busy === b.id} onClick={() => review(b.id, 'approved')}>
                     <Icon d={UI_ICONS.check} size={20} strokeWidth={2.6} />
                   </button>
                 </div>
               );
             })}
           </div>
-        )}
-      </section>
+        </section>
+      )}
 
       <section className="p-section">
-        <h2>Quick actions</h2>
-        <div className="p-actions">
-          <Link to="/parent/adjust?mode=give" className="p-btn primary"><Icon d={UI_ICONS.plus} size={20} />Give a bonus</Link>
-          <Link to="/parent/adjust?mode=take" className="p-btn"><Icon d={UI_ICONS.minus} size={20} />Take away</Link>
-          <Link to="/parent/jobs" className="p-btn"><Icon d={UI_ICONS.list} size={20} />Edit jobs</Link>
-          <Link to="/parent/settings" className="p-btn"><Icon d={UI_ICONS.wallet} size={20} />Pocket money</Link>
-        </div>
-      </section>
-
-      <section className="p-section">
-        <h2>Pay day</h2>
-        <div className="p-list">
-          {summaries.map((s) => (
-            <div key={s.kid.id} className="p-row">
-              <KidDot name={s.kid.name} color={inkOf(s.kid.color)} />
-              <div className="grow">
-                <div className="t">{s.kid.name}: {formatMoney(s.money)}</div>
-                <div className="m">{s.payout ? `Paid ${formatMoney(s.payout.amount)} on ${when(s.payout.paid_at)}` : 'Not paid yet this week'}</div>
+        <h2>This week</h2>
+        {summaries.map((s) => {
+          const ink = inkOf(s.kid.color);
+          return (
+            <Link key={s.kid.id} to={`/parent/adjust?kid=${s.kid.id}`} className="p-card p-kid" style={{ textDecoration: 'none', color: 'inherit', display: 'block' }}>
+              <div style={{ display: 'flex', alignItems: 'center', gap: 10 }}>
+                <span className="name" style={{ flex: 1 }}><KidDot name={s.kid.name} color={ink} />{s.kid.name}</span>
+                <span className="amt" style={{ margin: 0 }}>{formatMoneyShort(s.money)}<small> / {formatMoneyShort(s.target)}</small></span>
               </div>
-              {s.payout ? (
-                <button className="p-btn" disabled={busy === s.payout.id} onClick={() => act(s.payout!.id, () => undoPayout(s.payout!.id))}>Undo</button>
-              ) : (
-                <button
-                  className="p-btn primary"
-                  disabled={busy === s.kid.id}
-                  onClick={() => act(s.kid.id, () => recordPayout(s.kid.id, s.weekStart, s.money), `Marked ${formatMoney(s.money)} paid to ${s.kid.name}`)}
-                >
-                  Mark paid
-                </button>
-              )}
-            </div>
-          ))}
-        </div>
+              <div className="p-bar"><div style={{ width: `${s.target ? Math.min(100, (s.money / s.target) * 100) : 0}%`, background: ink }} /></div>
+              <div style={{ display: 'flex', justifyContent: 'space-between', gap: 8, flexWrap: 'wrap' }}>
+                <span className="line">Morning jobs <b>{s.doneCount}/{s.totalCount}</b></span>
+                <span className="line">Tech time this week <b>{s.tech.total} min</b></span>
+              </div>
+            </Link>
+          );
+        })}
+        <p className="p-label" style={{ textTransform: 'none', letterSpacing: 0, fontWeight: 600, textAlign: 'center' }}>
+          Tap a child to give or take away
+        </p>
       </section>
 
-      <section className="p-section">
-        <h2>Recent give &amp; take</h2>
-        {recent.length === 0 ? (
-          <div className="p-card p-empty">Nothing given or taken away yet.</div>
-        ) : (
-          <div className="p-list">
-            {recent.map((a) => {
-              const kid = kidById.get(a.kid_id);
-              const amt =
-                a.kind === 'money'
-                  ? `${a.amount > 0 ? '+' : '−'}${formatMoney(Math.abs(a.amount))}`
-                  : a.kind === 'tech'
-                    ? `${a.amount > 0 ? '+' : '−'}${Math.abs(a.amount)} min tech`
-                    : `${a.amount > 0 ? '+' : '−'}${Math.abs(a.amount)} stars`;
-              return (
-                <div key={a.id} className="p-row">
-                  {kid && <KidDot name={kid.name} color={inkOf(kid.color)} />}
-                  <div className="grow">
-                    <div className="t">{amt}</div>
-                    <div className="m">{kid?.name} · {a.reason || 'No reason'} · {when(a.created_at)}</div>
-                  </div>
-                  <button className="p-btn" disabled={busy === a.id} onClick={() => act(a.id, () => removeAdjustment(a.id), 'Undone')}>Undo</button>
-                </div>
-              );
-            })}
-          </div>
-        )}
-      </section>
+      {pending.length === 0 && owing.length === 0 && !loading && (
+        <div className="p-card p-empty">All caught up. Nothing needs you right now.</div>
+      )}
     </ParentLayout>
   );
 }

@@ -179,11 +179,11 @@ export function KidScreen() {
               {s.allDone || s.totalCount === 0 ? 'UNLOCKED' : `LOCKED · ${s.totalCount - s.doneCount} TO GO`}
             </span>
           </div>
-          <div className="mins"><span className="big">{s.tech.total}</span><span className="unit">MIN</span></div>
+          <div className="mins"><span className="big">{s.tech.total}</span><span className="unit">MIN THIS WEEK</span></div>
           <div className="log">
             <span className="plus">
               {s.tech.earned > 0
-                ? `+${s.tech.earned} min from bonus jobs`
+                ? `+${s.tech.earned} min from bonus jobs this week`
                 : `+${data.settings.bonus_tech_minutes} min for each bonus job`}
             </span>
             {s.tech.given > 0 && <span className="plus">+{s.tech.given} min from Mum or Dad</span>}
@@ -196,7 +196,7 @@ export function KidScreen() {
         <section className="panel bonus area-bonus" aria-label="Bonus jobs">
           <div className="panel-head">
             <h2>BONUS JOBS</h2>
-            <span className="panel-note">Each one = stars + {data.settings.bonus_tech_minutes} min tech time</span>
+            <span className="panel-note">Each one = stars + {data.settings.bonus_tech_minutes} min tech time this week</span>
           </div>
           <div className="bonus-grid">
             {s.bonusJobs.map((b) => {

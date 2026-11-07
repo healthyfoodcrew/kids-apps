@@ -1,5 +1,5 @@
 import { useEffect, useState } from 'react';
-import { useNavigate, useSearchParams } from 'react-router-dom';
+import { useSearchParams } from 'react-router-dom';
 import { Icon, JOB_ICONS, UI_ICONS } from '../components/Icon';
 import { summarizeKid } from '../lib/calc';
 import { useFamily, useNow } from '../lib/store';
@@ -15,9 +15,9 @@ const START: Record<AdjustmentKind, number> = { money: 1, tech: 10, stars: 10 };
 const MAX: Record<AdjustmentKind, number> = { money: 20, tech: 120, stars: 200 };
 
 export function Adjust() {
-  const { data, addAdjustment } = useFamily();
+  const { data, addAdjustment, removeAdjustment } = useFamily();
+  const [undoing, setUndoing] = useState<string | null>(null);
   const now = useNow(30_000);
-  const navigate = useNavigate();
   const [params] = useSearchParams();
 
   const [mode, setMode] = useState<'take' | 'give'>(params.get('mode') === 'give' ? 'give' : 'take');
@@ -28,6 +28,7 @@ export function Adjust() {
   const [other, setOther] = useState('');
   const [saving, setSaving] = useState(false);
   const [error, setError] = useState<string | null>(null);
+  const [done, setDone] = useState<string | null>(null);
 
   useEffect(() => {
     if (!kidId && data.kids[0]) setKidId(data.kids[0].id);
@@ -65,7 +66,12 @@ export function Adjust() {
     const err = await addAdjustment(kid.id, kind, take ? -amount : amount, finalReason);
     setSaving(false);
     if (err) setError(err);
-    else navigate('/parent');
+    else {
+      setError(null);
+      setDone(`Done: ${take ? '−' : '+'}${what} ${take ? 'from' : 'for'} ${kid.name}`);
+      setReason('');
+      setOther('');
+    }
   }
 
   const sources: { id: AdjustmentKind; label: string; icon: string; balance: string }[] = [
@@ -145,6 +151,7 @@ export function Adjust() {
       </section>
 
       {error && <div className="p-msg err">{error}</div>}
+      {done && <div className="p-msg ok" role="status">{done}</div>}
 
       <div className="p-preview">
         {kid ? `${kid.name} will see: ${take ? '−' : '+'}${what}${finalReason ? ` · ${finalReason}` : ''}` : 'Pick who this is for'}
@@ -152,6 +159,43 @@ export function Adjust() {
       <button className={`p-btn block ${take ? 'danger' : 'primary'}`} onClick={confirm} disabled={!kid || saving}>
         {saving ? 'Saving…' : `${take ? 'Take away' : 'Give'} ${label} ${take ? 'from' : 'to'} ${kid?.name ?? ''}`}
       </button>
+
+      <section className="p-section" style={{ marginTop: 12 }}>
+        <h2>Recent</h2>
+        {data.adjustments.length === 0 ? (
+          <div className="p-card p-empty">Nothing given or taken away yet.</div>
+        ) : (
+          <div className="p-list">
+            {data.adjustments.slice(0, 6).map((a) => {
+              const k = data.kids.find((x) => x.id === a.kid_id);
+              const sign = a.amount > 0 ? '+' : '−';
+              const amt =
+                a.kind === 'money' ? `${sign}${formatMoney(Math.abs(a.amount))}` : a.kind === 'tech' ? `${sign}${Math.abs(a.amount)} min tech` : `${sign}${Math.abs(a.amount)} stars`;
+              return (
+                <div key={a.id} className="p-row">
+                  {k && <KidDot name={k.name} color={inkOf(k.color)} />}
+                  <div className="grow">
+                    <div className="t">{amt}</div>
+                    <div className="m">{k?.name} · {a.reason || 'No reason'} · {new Date(a.created_at).toLocaleString('en-AU', { weekday: 'short', hour: 'numeric', minute: '2-digit' })}</div>
+                  </div>
+                  <button
+                    className="p-btn"
+                    disabled={undoing === a.id}
+                    onClick={async () => {
+                      setUndoing(a.id);
+                      const err = await removeAdjustment(a.id);
+                      setUndoing(null);
+                      if (err) setError(err);
+                    }}
+                  >
+                    Undo
+                  </button>
+                </div>
+              );
+            })}
+          </div>
+        )}
+      </section>
     </ParentLayout>
   );
 }

@@ -3,6 +3,7 @@ import { Icon, JOB_ICONS, UI_ICONS } from '../components/Icon';
 import { useFamily, type JobInput } from '../lib/store';
 import type { Job, JobKind } from '../lib/types';
 import { KidDot, ParentLayout, inkOf } from './ParentLayout';
+import { SubHeader } from './Settings';
 
 const DAY_LABELS = ['M', 'T', 'W', 'T', 'F', 'S', 'S'];
 const DAY_NAMES = ['Mon', 'Tue', 'Wed', 'Thu', 'Fri', 'Sat', 'Sun'];
@@ -202,10 +203,10 @@ export function Jobs() {
 
   return (
     <ParentLayout>
-      <header className="p-head">
-        <h1>Jobs</h1>
-        <button className="p-btn primary" onClick={startNew} disabled={!kid}><Icon d={UI_ICONS.plus} size={18} strokeWidth={2.6} />Add job</button>
-      </header>
+      <SubHeader
+        title="Jobs"
+        action={<button className="p-btn primary" onClick={startNew} disabled={!kid}><Icon d={UI_ICONS.plus} size={18} strokeWidth={2.6} />Add</button>}
+      />
       {msg && <div className={`p-msg ${msg.kind}`} role="status">{msg.text}</div>}
 
       <div className="p-grid2">
