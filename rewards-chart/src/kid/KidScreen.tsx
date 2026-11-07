@@ -17,7 +17,6 @@ export function KidScreen() {
   const [busy, setBusy] = useState<string | null>(null);
   const [celebrate, setCelebrate] = useState(false);
   const prevAllDone = useRef<boolean | null>(null);
-  const [periodChoice, setPeriodChoice] = useState<'morning' | 'evening' | null>(null);
 
   const kid = data.kids.find((k) => k.id === kidId);
   const s = kid ? summarizeKid(kid, data, now) : null;
@@ -40,13 +39,11 @@ export function KidScreen() {
 
   const timer = timerState(data.settings, now);
   const color = kid.color;
-  // Morning quests until midday (or until they're done after midday), then evening quests.
+  // Morning quests in the morning; evening quests from 3pm (or from midday once the morning ones are done).
   const hour = localParts(now, data.settings.timezone).secondsOfDay / 3600;
-  const autoPeriod = s.eveningJobs.length > 0 && (hour >= 15 || (hour >= 12 && s.allDone)) ? 'evening' : 'morning';
-  const period = s.eveningJobs.length === 0 ? 'morning' : periodChoice ?? autoPeriod;
+  const period: 'morning' | 'evening' =
+    s.eveningJobs.length > 0 && (hour >= 15 || (hour >= 12 && (s.allDone || s.totalCount === 0))) ? 'evening' : 'morning';
   const shown = period === 'morning' ? s.todayJobs : s.eveningJobs;
-  const shownDone = shown.filter((t) => t.done).length;
-  const cols = Math.min(5, Math.max(1, shown.length));
   const jobsToNext = Math.max(1, Math.ceil(s.starsToNextDollar / 10));
 
   async function tapQuest(job: Job, completionId?: string) {
@@ -144,28 +141,12 @@ export function KidScreen() {
 
         <section className="area-quests" aria-label="Today's quests">
           <div className="quests-head">
-            {s.eveningJobs.length > 0 ? (
-              <div className="period-tabs" role="group" aria-label="Morning or evening quests">
-                <button aria-pressed={period === 'morning'} onClick={() => setPeriodChoice('morning')}>
-                  MORNING <span>{s.doneCount}/{s.totalCount}</span>
-                </button>
-                <button aria-pressed={period === 'evening'} onClick={() => setPeriodChoice('evening')}>
-                  EVENING <span>{s.eveningDone}/{s.eveningJobs.length}</span>
-                </button>
-              </div>
-            ) : (
-              <h2>MORNING QUESTS</h2>
-            )}
-            <div className="dots" aria-label={`${shownDone} of ${shown.length} done`}>
-              {shown.map((t) => (
-                <span key={t.job.id} className={`dot${t.done ? ' on' : ''}`} style={t.done ? { background: color } : undefined} />
-              ))}
-            </div>
+            <h2>{period === 'morning' ? 'MORNING QUESTS' : 'EVENING QUESTS'}</h2>
           </div>
           {shown.length === 0 ? (
             <div className="quests-empty">No {period} quests today. Enjoy!</div>
           ) : (
-            <div className="quest-grid" style={{ '--cols': cols } as CSSProperties}>
+            <div className="quest-grid">
               {shown.map((t, i) => {
                 const tile = TILE_COLORS[i % TILE_COLORS.length];
                 const turns = t.job.assign_mode !== 'each' && t.job.kid_ids.length > 1;
@@ -179,9 +160,9 @@ export function KidScreen() {
                     onClick={() => tapQuest(t.job, t.completion?.id)}
                   >
                     {t.done && (
-                      <span className="stamp"><Icon d={UI_ICONS.check} size={24} strokeWidth={3.2} /></span>
+                      <span className="stamp"><Icon d={UI_ICONS.check} size={20} strokeWidth={3.2} /></span>
                     )}
-                    <span className="icon-box"><Icon name={t.job.icon} size={40} /></span>
+                    <span className="icon-box"><Icon name={t.job.icon} size={28} /></span>
                     <span className="title">{t.job.title}</span>
                     {turns && !t.done && <span className="turn-tag">YOUR TURN</span>}
                     <span className="foot">{t.done ? 'DONE!' : `TAP ME · +${t.job.stars}`}</span>
@@ -209,14 +190,15 @@ export function KidScreen() {
           <div className="row">
             <span className="title"><Icon d={UI_ICONS.gamepad} size={26} strokeWidth={1.9} />TECH TIME</span>
             <span className="status">
-              {s.allDone || s.totalCount === 0 ? 'UNLOCKED' : `LOCKED · ${s.totalCount - s.doneCount} TO GO`}
+              {s.allDone || s.totalCount === 0 ? 'UNLOCKED' : `LOCKED · ${s.totalCount - s.doneCount} MORNING ${s.totalCount - s.doneCount === 1 ? 'JOB' : 'JOBS'}`}
             </span>
           </div>
-          <div className="mins"><span className="big">{s.tech.total}</span><span className="unit">MIN THIS WEEK</span></div>
+          <div className="mins"><span className="big">{s.tech.total}</span><span className="unit">MIN</span></div>
+            <div className="week">LEFT THIS WEEK</div>
           <div className="log">
             <span className="plus">
               {s.tech.earned > 0
-                ? `+${s.tech.earned} min from bonus jobs this week`
+                ? `+${s.tech.earned} min from bonus jobs`
                 : `+${data.settings.bonus_tech_minutes} min for each bonus job`}
             </span>
             {s.tech.given > 0 && <span className="plus">+{s.tech.given} min from Mum or Dad</span>}
@@ -230,7 +212,7 @@ export function KidScreen() {
         <section className="panel bonus area-bonus" aria-label="Bonus jobs">
           <div className="panel-head">
             <h2>BONUS JOBS</h2>
-            <span className="panel-note">Each one = stars + {data.settings.bonus_tech_minutes} min tech time this week</span>
+            <span className="panel-note">Did one? Tap it! Mum or Dad gives the thumbs up</span>
           </div>
           <div className="bonus-grid">
             {s.bonusJobs.map((b) => {
@@ -247,6 +229,7 @@ export function KidScreen() {
                     <Icon name={b.job.icon} size={34} strokeWidth={1.9} />
                     <span className="name">{b.job.title}</span>
                     <span className="reward">{full ? 'ALL DONE THIS WEEK' : `+${b.job.stars} STARS · +${data.settings.bonus_tech_minutes} MIN`}</span>
+                    {!full && b.pendingThisWeek === 0 && <span className="tap-hint">TAP WHEN DONE</span>}
                     <span className="pips">
                       {Array.from({ length: b.job.max_per_week }, (_, i) => (
                         <span key={i} className={`pip${i < approved ? ' on' : i < b.usedThisWeek ? ' wait' : ''}`} />

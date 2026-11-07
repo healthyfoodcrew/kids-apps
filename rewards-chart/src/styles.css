@@ -83,16 +83,17 @@ button:disabled { cursor: default; }
   flex: 1;
   display: grid;
   gap: 12px 16px;
-  grid-template-columns: repeat(3, minmax(0, 1fr));
+  grid-template-columns: minmax(0, 2fr) minmax(0, 1fr) minmax(0, 1fr);
   grid-template-areas:
-    'money money timer'
+    'money timer tech'
     'quests quests quests'
-    'tech bonus bonus';
-  grid-template-rows: auto auto 1fr;
+    'bonus bonus bonus';
+  grid-template-rows: auto auto auto;
+  align-content: start;
 }
 .area-money { grid-area: money; }
 .area-timer { grid-area: timer; }
-.area-quests { grid-area: quests; }
+.area-quests { grid-area: quests; display: flex; flex-direction: column; min-height: 0; }
 .area-tech { grid-area: tech; }
 .area-bonus { grid-area: bonus; }
 
@@ -104,7 +105,7 @@ button:disabled { cursor: default; }
       'timer tech'
       'quests quests'
       'bonus bonus';
-    grid-template-rows: auto;
+    grid-template-rows: auto auto auto auto;
     align-content: start;
   }
 }
@@ -190,25 +191,25 @@ button:disabled { cursor: default; }
 .period-tabs button span { font-family: var(--body); font-size: 14px; font-weight: 900; padding: 2px 8px; border-radius: 999px; background: var(--panel-2); color: #fff; }
 .period-tabs button[aria-pressed='true'] { background: var(--kid); color: var(--ink); }
 .period-tabs button[aria-pressed='true'] span { background: rgba(18, 15, 58, 0.2); color: var(--ink); }
-.quest .turn-tag { font-size: 11px; font-weight: 900; letter-spacing: 0.08em; padding: 2px 8px; border-radius: 999px; background: var(--tile); color: var(--ink); }
-.quest-grid { display: grid; grid-template-columns: repeat(var(--cols, 5), minmax(0, 1fr)); gap: 16px; }
+.quest .turn-tag { font-size: 10px; font-weight: 900; letter-spacing: 0.08em; padding: 2px 8px; border-radius: 999px; background: var(--tile); color: var(--ink); }
+.quest-grid { display: grid; grid-template-columns: repeat(5, minmax(0, 1fr)); grid-auto-rows: 132px; gap: 12px; }
 @media (max-width: 640px) { .quest-grid { grid-template-columns: repeat(2, minmax(0, 1fr)); } }
 .quest {
-  position: relative; min-height: 164px;
-  border-radius: 24px; padding: 16px;
-  display: flex; flex-direction: column; align-items: flex-start; gap: 10px;
+  position: relative; height: 100%; min-height: 0; overflow: hidden;
+  border-radius: 20px; padding: 12px 12px 10px;
+  display: flex; flex-direction: column; align-items: flex-start; gap: 6px;
   text-align: left; color: #fff;
   background: var(--panel); border: 4px solid var(--edge); box-shadow: 0 6px 0 #0a0826;
   transition: transform 0.12s ease, box-shadow 0.12s ease;
 }
 .quest:active { transform: translateY(4px); box-shadow: 0 2px 0 #0a0826; }
 .quest.done { background: var(--panel-2); border-color: var(--tile); box-shadow: 0 6px 0 var(--tile); }
-.quest .icon-box { width: 64px; height: 64px; border-radius: 18px; display: flex; align-items: center; justify-content: center; background: var(--tile); color: var(--ink); }
-.quest .title { font-family: var(--display); font-size: 24px; line-height: 1.05; }
-.quest .foot { margin-top: auto; font-size: 15px; font-weight: 900; letter-spacing: 0.08em; color: var(--gold); }
+.quest .icon-box { width: 46px; height: 46px; border-radius: 14px; flex-shrink: 0; display: flex; align-items: center; justify-content: center; background: var(--tile); color: var(--ink); }
+.quest .title { font-family: var(--display); font-size: 19px; line-height: 1.05; display: -webkit-box; -webkit-line-clamp: 2; -webkit-box-orient: vertical; overflow: hidden; }
+.quest .foot { margin-top: auto; font-size: 12px; font-weight: 900; letter-spacing: 0.06em; color: var(--gold); white-space: nowrap; }
 .quest.done .foot { color: var(--tile); }
 .quest .stamp {
-  position: absolute; top: 12px; right: 12px; width: 40px; height: 40px; border-radius: 50%;
+  position: absolute; top: 10px; right: 10px; width: 32px; height: 32px; border-radius: 50%;
   background: var(--gold); color: var(--ink); display: flex; align-items: center; justify-content: center;
   transform: rotate(12deg); animation: pop 0.5s ease;
 }
@@ -217,13 +218,14 @@ button:disabled { cursor: default; }
 /* Tech time */
 .tech { display: flex; flex-direction: column; justify-content: space-between; gap: 6px; border: 3px dashed var(--red); }
 .tech.open { background: var(--green); color: var(--green-ink); border: 3px solid var(--green); }
-.tech .row { display: flex; align-items: center; justify-content: space-between; gap: 8px; }
-.tech .title { display: flex; align-items: center; gap: 8px; font-family: var(--display); font-size: 22px; letter-spacing: 0.02em; }
+.tech .row { display: flex; align-items: center; justify-content: space-between; gap: 6px; flex-wrap: wrap; }
+.tech .title { display: flex; align-items: center; gap: 8px; font-family: var(--display); font-size: 22px; letter-spacing: 0.02em; white-space: nowrap; }
 .tech .status { padding: 4px 10px; border-radius: 999px; font-size: 12px; font-weight: 900; letter-spacing: 0.04em; background: var(--red); color: var(--ink); }
 .tech.open .status { background: var(--green-ink); color: var(--green); }
 .tech .mins { display: flex; align-items: baseline; gap: 8px; }
 .tech .mins .big { font-family: var(--display); font-size: 56px; line-height: 1; }
 .tech .mins .unit { font-family: var(--display); font-size: 22px; }
+.tech .week { font-size: 13px; font-weight: 900; letter-spacing: 0.06em; opacity: 0.75; margin-top: -4px; }
 .tech .log { display: flex; flex-direction: column; gap: 4px; font-size: 14px; font-weight: 800; }
 .tech .plus { color: var(--green); }
 .tech .minus { color: var(--red-soft); }
@@ -241,7 +243,7 @@ button:disabled { cursor: default; }
 
 /* Bonus */
 .bonus { display: flex; flex-direction: column; gap: 8px; padding-top: 12px; padding-bottom: 12px; }
-.bonus-grid { display: grid; grid-template-columns: repeat(auto-fit, minmax(120px, 1fr)); gap: 12px; }
+.bonus-grid { display: grid; grid-template-columns: repeat(auto-fit, minmax(150px, 1fr)); gap: 12px; }
 .bonus-cell { position: relative; display: flex; }
 .bonus-btn {
   flex: 1; position: relative; min-height: 112px; border-radius: 20px; border: 0;
@@ -261,6 +263,7 @@ button:disabled { cursor: default; }
 .bonus-btn.full .pip { background: var(--edge); }
 .bonus-btn.full .pip.on { background: var(--muted); }
 .waiting { font-size: 12px; font-weight: 900; }
+.tap-hint { font-size: 11px; font-weight: 900; letter-spacing: 0.08em; padding: 2px 8px; border-radius: 999px; background: rgba(18, 15, 58, 0.16); }
 .undo-link {
   position: absolute; top: 6px; right: 6px; min-width: 44px; height: 30px; border-radius: 10px; border: 0;
   background: rgba(18, 15, 58, 0.18); color: var(--ink); font-size: 12px; font-weight: 900;
@@ -282,11 +285,12 @@ button:disabled { cursor: default; }
   .phase-chip { font-size: 17px; padding: 4px 12px; }
   .quests-head { margin-bottom: 6px; }
   .quests-head h2 { font-size: 26px; }
-  .quest { min-height: 136px; padding: 12px; gap: 8px; }
-  .quest .icon-box { width: 50px; height: 50px; border-radius: 14px; }
-  .quest .icon-box svg { width: 32px; height: 32px; }
-  .quest .title { font-size: 21px; }
-  .quest .stamp { width: 34px; height: 34px; top: 10px; right: 10px; }
+  .quest-grid { grid-auto-rows: 124px; gap: 10px; }
+  .quest { padding: 10px 10px 8px; gap: 5px; }
+  .quest .icon-box { width: 38px; height: 38px; border-radius: 12px; }
+  .quest .icon-box svg { width: 24px; height: 24px; }
+  .quest .title { font-size: 16px; }
+  .quest .stamp { width: 28px; height: 28px; top: 8px; right: 8px; }
   .tech .mins .big { font-size: 46px; }
   .bonus-btn { min-height: 96px; }
   .bonus-btn svg { width: 28px; height: 28px; }
