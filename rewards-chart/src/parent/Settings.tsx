@@ -166,6 +166,7 @@ export function RulesSettings() {
       speed_bonus_stars: form.speed_bonus_stars,
       stars_per_dollar: Math.max(1, form.stars_per_dollar),
       bonus_tech_minutes: form.bonus_tech_minutes,
+      pet_name: (form.pet_name ?? 'Bruno').trim() || 'Bruno',
     });
     setMsg(err ? { kind: 'err', text: err } : { kind: 'ok', text: 'Saved' });
   }
@@ -198,6 +199,11 @@ export function RulesSettings() {
           <label className="p-field"><span>Speed bonus if done (min early)</span><input className="p-input" inputMode="numeric" value={form.speed_bonus_minutes} onChange={num('speed_bonus_minutes')} /></label>
           <label className="p-field"><span>Speed bonus (stars)</span><input className="p-input" inputMode="numeric" value={form.speed_bonus_stars} onChange={num('speed_bonus_stars')} /></label>
         </div>
+      </div>
+
+      <div className="p-card p-section">
+        <p className="p-label">Family dog</p>
+        <label className="p-field"><span>Dog's name (shown on the iPad)</span><input className="p-input" maxLength={20} value={form.pet_name ?? 'Bruno'} onChange={(e) => setForm({ ...form, pet_name: e.target.value })} /></label>
       </div>
 
       <div className="p-card p-section">

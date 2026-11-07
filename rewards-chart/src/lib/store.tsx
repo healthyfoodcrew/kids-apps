@@ -141,6 +141,7 @@ export interface JobInput {
   period: JobPeriod;
   assign_mode: AssignMode;
   rotation_offset: number;
+  category?: 'quest' | 'pet';
   stars: number;
   max_per_week: number;
   days: number[];

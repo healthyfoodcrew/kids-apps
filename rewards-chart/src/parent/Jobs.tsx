@@ -56,6 +56,7 @@ export function Jobs() {
       period: group === 'evening' ? 'evening' : 'morning',
       assign_mode: 'each',
       rotation_offset: 0,
+      category: 'quest',
       stars: group === 'bonus' ? 15 : 10,
       max_per_week: 3,
       days: [1, 2, 3, 4, 5, 6, 7],
@@ -67,7 +68,7 @@ export function Jobs() {
     setMsg(null);
     setEditing({
       id: j.id, kid_ids: j.kid_ids, title: j.title, icon: j.icon, kind: j.kind, period: j.period ?? 'morning',
-      assign_mode: j.assign_mode ?? 'each', rotation_offset: j.rotation_offset ?? 0, stars: j.stars,
+      assign_mode: j.assign_mode ?? 'each', rotation_offset: j.rotation_offset ?? 0, category: j.category ?? 'quest', stars: j.stars,
       max_per_week: j.max_per_week, days: j.days, active: j.active,
     });
   }
@@ -106,7 +107,7 @@ export function Jobs() {
   async function toggleActive(j: Job) {
     const err = await saveJob({
       id: j.id, kid_ids: j.kid_ids, title: j.title, icon: j.icon, kind: j.kind, period: j.period ?? 'morning',
-      assign_mode: j.assign_mode ?? 'each', rotation_offset: j.rotation_offset ?? 0, stars: j.stars,
+      assign_mode: j.assign_mode ?? 'each', rotation_offset: j.rotation_offset ?? 0, category: j.category ?? 'quest', stars: j.stars,
       max_per_week: j.max_per_week, days: j.days, active: !j.active,
     });
     if (err) setMsg({ kind: 'err', text: err });
@@ -158,6 +159,16 @@ export function Jobs() {
             {g === 'bonus' ? 'Done now and then during the week; a parent gives the thumbs up.' : g === 'morning' ? 'Morning quests unlock tech time and count for the speed bonus.' : 'Shown on the iPad from the afternoon.'}
           </span>
         </div>
+
+        {e.kind === 'daily' && (
+          <div className="p-card p-inline" style={{ justifyContent: 'space-between' }}>
+            <div>
+              <div style={{ fontWeight: 700, fontSize: 15 }}>Show in {data.settings.pet_name || 'Bruno'}'s task box</div>
+              <div style={{ fontSize: 12, color: 'var(--p-muted)', fontWeight: 600 }}>For dog jobs like feeding or water</div>
+            </div>
+            <button className="p-toggle" aria-pressed={e.category === 'pet'} aria-label="Show in the dog's task box" onClick={() => set({ category: e.category === 'pet' ? 'quest' : 'pet' })} />
+          </div>
+        )}
 
         <div className="p-field">
           <span>Who</span>
@@ -299,7 +310,7 @@ export function Jobs() {
               <div key={j.id} className="p-row" style={j.active ? undefined : { opacity: 0.55 }}>
                 <Icon name={j.icon} size={24} strokeWidth={1.8} />
                 <button className="grow" onClick={() => startEdit(j)} style={{ border: 0, background: 'transparent', textAlign: 'left', padding: 0, minHeight: 44, color: 'inherit' }}>
-                  <div className="t">{j.title}</div>
+                  <div className="t">{j.title}{j.category === 'pet' ? ` · ${data.settings.pet_name || 'Bruno'}'s box` : ''}</div>
                   <div className="m">
                     {names(j.kid_ids, kids)}
                     {turns ? ` · take turns ${j.assign_mode === 'rotate_weekly' ? 'weekly' : 'daily'} (${kids.find((k) => k.id === onDuty)?.name ?? ''} ${j.assign_mode === 'rotate_weekly' ? 'this week' : 'today'})` : ''}

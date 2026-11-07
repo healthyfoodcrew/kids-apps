@@ -382,3 +382,10 @@ alter table public.kids add column if not exists tech_banned boolean not null de
 alter table public.kids add column if not exists tech_ban_until timestamptz;      -- null = until a parent lifts it
 alter table public.kids add column if not exists tech_ban_reason text not null default '';
 alter table public.kids add column if not exists tech_ban_started_at timestamptz;
+
+-- Pet jobs: shown in the dog's own box on the iPad instead of with the quests.
+alter table public.jobs add column if not exists category text not null default 'quest';
+do $$ begin
+  alter table public.jobs add constraint jobs_category_check check (category in ('quest', 'pet'));
+exception when duplicate_object then null; end $$;
+alter table public.settings add column if not exists pet_name text not null default 'Bruno';

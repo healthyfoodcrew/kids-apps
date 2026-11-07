@@ -168,3 +168,47 @@ export function Confetti() {
     </div>
   );
 }
+
+/** A friendly cartoon dog face, drawn in code (no image files needed). */
+export function DogFace({ size = 72, happy = false }: { size?: number; happy?: boolean }) {
+  return (
+    <svg width={size} height={size} viewBox="0 0 100 100" aria-hidden="true">
+      {/* ears */}
+      <path d="M18 30 C6 34 6 62 16 70 C24 62 28 46 30 34 Z" fill="#7A4A2A" />
+      <path d="M82 30 C94 34 94 62 84 70 C76 62 72 46 70 34 Z" fill="#7A4A2A" />
+      {/* head */}
+      <ellipse cx="50" cy="52" rx="32" ry="30" fill="#C98B55" />
+      {/* face patch */}
+      <ellipse cx="50" cy="64" rx="18" ry="14" fill="#F2D3B0" />
+      {/* eyes */}
+      {happy ? (
+        <>
+          <path d="M33 46 q5 -6 10 0" stroke="#2B1A10" strokeWidth="3.5" fill="none" strokeLinecap="round" />
+          <path d="M57 46 q5 -6 10 0" stroke="#2B1A10" strokeWidth="3.5" fill="none" strokeLinecap="round" />
+        </>
+      ) : (
+        <>
+          <circle cx="38" cy="46" r="5" fill="#2B1A10" />
+          <circle cx="62" cy="46" r="5" fill="#2B1A10" />
+          <circle cx="39.5" cy="44.5" r="1.6" fill="#fff" />
+          <circle cx="63.5" cy="44.5" r="1.6" fill="#fff" />
+        </>
+      )}
+      {/* nose + mouth */}
+      <ellipse cx="50" cy="58" rx="6" ry="4.5" fill="#2B1A10" />
+      <path d="M50 62 v4 M50 66 q-6 5 -10 1 M50 66 q6 5 10 1" stroke="#2B1A10" strokeWidth="2.5" fill="none" strokeLinecap="round" />
+      {/* tongue */}
+      <path d="M46 69 q4 9 8 0 z" fill="#FF7A8A" />
+    </svg>
+  );
+}
+
+const PAW = 'M12 13c-2.5 0-4.5 2-4.5 4 0 1.5 1.5 2.5 4.5 2.5s4.5-1 4.5-2.5c0-2-2-4-4.5-4z M6.5 11a1.8 2.2 0 1 0 0 .01 M17.5 11a1.8 2.2 0 1 0 0 .01 M9.5 7a1.8 2.2 0 1 0 0 .01 M14.5 7a1.8 2.2 0 1 0 0 .01';
+
+export function PawPrint({ size = 18, style }: { size?: number; style?: CSSProperties }) {
+  return (
+    <svg width={size} height={size} viewBox="0 0 24 24" aria-hidden="true" style={style}>
+      <path d={PAW} fill="currentColor" />
+    </svg>
+  );
+}

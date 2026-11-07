@@ -7,7 +7,7 @@ import { summarizeKid, timerState } from '../lib/calc';
 import { useFamily, useNow } from '../lib/store';
 import { banEndText, formatMoneyShort, localParts } from '../lib/time';
 import type { Job } from '../lib/types';
-import { Confetti, RewardTrack, TILE_COLORS, TimerCard } from './parts';
+import { Confetti, DogFace, PawPrint, RewardTrack, TILE_COLORS, TimerCard } from './parts';
 
 export function KidScreen() {
   const { kidId } = useParams();
@@ -43,7 +43,11 @@ export function KidScreen() {
   const hour = localParts(now, data.settings.timezone).secondsOfDay / 3600;
   const period: 'morning' | 'evening' =
     s.eveningJobs.length > 0 && (hour >= 15 || (hour >= 12 && (s.allDone || s.totalCount === 0))) ? 'evening' : 'morning';
-  const shown = period === 'morning' ? s.todayJobs : s.eveningJobs;
+  const all = period === 'morning' ? s.todayJobs : s.eveningJobs;
+  const shown = all.filter((t) => t.job.category !== 'pet');
+  const petTasks = all.filter((t) => t.job.category === 'pet');
+  const petName = data.settings.pet_name || 'Bruno';
+  const petDone = petTasks.length > 0 && petTasks.every((t) => t.done);
   const jobsToNext = Math.max(1, Math.ceil(s.starsToNextDollar / 10));
 
   async function tapQuest(job: Job, completionId?: string) {
@@ -208,6 +212,40 @@ export function KidScreen() {
           </div>
         </section>
         )}
+
+        <section className={`panel pet area-pet${petDone ? ' done' : ''}`} aria-label={`${petName}'s task`}>
+          <PawPrint size={22} style={{ position: 'absolute', top: 12, right: 14, opacity: 0.35, transform: 'rotate(20deg)' }} />
+          <PawPrint size={16} style={{ position: 'absolute', bottom: 12, right: 40, opacity: 0.25, transform: 'rotate(-15deg)' }} />
+          <div className="pet-head">
+            <DogFace size={56} happy={petDone} />
+            <div>
+              <div className="pet-title">{petName.toUpperCase()}'S TASK</div>
+              <div className="pet-sub">{period === 'morning' ? 'This morning' : 'This afternoon'}</div>
+            </div>
+          </div>
+          {petTasks.length === 0 ? (
+            <div className="pet-none">{petName} is all sorted {period === 'morning' ? 'this morning' : 'tonight'}!</div>
+          ) : (
+            <div className="pet-tasks">
+              {petTasks.map((t) => (
+                <button
+                  key={t.job.id}
+                  className={`pet-task${t.done ? ' done' : ''}`}
+                  aria-pressed={t.done}
+                  disabled={busy === t.job.id}
+                  onClick={() => tapQuest(t.job, t.completion?.id)}
+                >
+                  <span className="pet-icon"><Icon name={t.job.icon} size={28} strokeWidth={2.2} /></span>
+                  <span className="pet-name">{t.job.title}</span>
+                  <span className="pet-state">
+                    {t.done ? <><Icon d={UI_ICONS.check} size={18} strokeWidth={3.2} /> DONE</> : `TAP WHEN DONE · +${t.job.stars}`}
+                  </span>
+                </button>
+              ))}
+            </div>
+          )}
+          {petDone && <div className="pet-thanks">{petName} says thanks! Woof!</div>}
+        </section>
 
         <section className="panel bonus area-bonus" aria-label="Bonus jobs">
           <div className="panel-head">

@@ -18,6 +18,7 @@ export const JOB_ICONS: Record<string, { label: string; d: string }> = {
   plant: { label: 'Water plants', d: 'M12 21v-8 M12 13c0-4 3-6 7-6 0 4-3 6-7 6z M12 15c0-3-2-5-6-5 0 3 2 5 6 5z' },
   broom: { label: 'Sweep', d: 'M14 3l-4 9 M6 12h8l2 9H4z M8 16v5 M12 16v5' },
   car: { label: 'Car', d: 'M3 16v-4l2-5h14l2 5v4z M3 16v2h3v-2 M18 16v2h3v-2 M7 12h.01 M17 12h.01' },
+  water: { label: 'Water bowl', d: 'M12 3c3 4 6 7.5 6 11a6 6 0 0 1-12 0c0-3.5 3-7 6-11z M9.5 14.5a2.5 2.5 0 0 0 2.5 2.5' },
   star: { label: 'Star', d: 'M12 3l2.7 5.6 6.1.9-4.4 4.3 1 6.1L12 17l-5.4 2.9 1-6.1L3.2 9.5l6.1-.9z' },
 };
 

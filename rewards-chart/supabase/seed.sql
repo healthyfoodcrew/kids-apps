@@ -43,3 +43,11 @@ join (values
   ('Louie', 'Set the table', 'table',   'bonus', 10, 3, '{1,2,3,4,5,6,7}', 3),
   ('Louie', 'Shoes away',    'shoe',    'bonus', 10, 3, '{1,2,3,4,5,6,7}', 4)
 ) as j(kid, title, icon, kind, stars, max_per_week, days, sort) on j.kid = k.name;
+
+-- Bruno's jobs: morning and afternoon, the boys take turns (opposite order, so one feeds while the other does water).
+insert into public.jobs (kid_ids, title, icon, kind, period, assign_mode, rotation_offset, category, stars, days, sort)
+select array[t.id, l.id], v.title, v.icon, 'daily', v.period, 'rotate_daily', v.off, 'pet', 10, '{1,2,3,4,5,6,7}', v.sort
+from public.kids t, public.kids l,
+  (values ('Feed Bruno', 'bowl', 'morning', 0, 90), ('Fill Bruno''s water', 'water', 'morning', 1, 91),
+          ('Feed Bruno', 'bowl', 'evening', 0, 90), ('Fill Bruno''s water', 'water', 'evening', 1, 91)) as v(title, icon, period, off, sort)
+where t.name = 'Tommy' and l.name = 'Louie';

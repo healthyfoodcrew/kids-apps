@@ -10,6 +10,7 @@ export interface Settings {
   speed_bonus_stars: number;
   stars_per_dollar: number;
   bonus_tech_minutes: number;
+  pet_name?: string;
 }
 
 export interface Kid {
@@ -42,6 +43,7 @@ export interface Job {
   period: JobPeriod; // daily jobs: morning or evening
   assign_mode: AssignMode; // everyone does it, or they take turns (daily or weekly)
   rotation_offset: number; // shifts whose turn it is
+  category?: 'quest' | 'pet'; // pet jobs show in the dog's own box
   stars: number;
   max_per_week: number;
   days: number[];
@@ -111,4 +113,5 @@ export const DEFAULT_SETTINGS: Settings = {
   speed_bonus_stars: 20,
   stars_per_dollar: 30,
   bonus_tech_minutes: 10,
+  pet_name: 'Bruno',
 };

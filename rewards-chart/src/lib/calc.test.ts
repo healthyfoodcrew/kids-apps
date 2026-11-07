@@ -218,3 +218,14 @@ describe('tech time dead', () => {
     expect(summarizeKid(banned, data({ kids: [banned] }), new Date('2030-01-01T00:00:00Z')).tech.ban).not.toBeNull();
   });
 });
+
+describe("Bruno's tasks", () => {
+  it('gives the two boys different dog jobs each day, swapping the next day', () => {
+    const feed = job('feed', 'daily', 10, [1, 2, 3, 4, 5, 6, 7], { kid_ids: ['k1', 'k2'], assign_mode: 'rotate_daily', rotation_offset: 0, category: 'pet' });
+    const water = job('water', 'daily', 10, [1, 2, 3, 4, 5, 6, 7], { kid_ids: ['k1', 'k2'], assign_mode: 'rotate_daily', rotation_offset: 1, category: 'pet' });
+    for (const d of ['2025-11-10', '2025-11-11', '2025-11-12', '2025-11-16', '2025-11-17']) {
+      expect(kidsOnDuty(feed, d)[0]).not.toBe(kidsOnDuty(water, d)[0]);
+      expect(kidsOnDuty(feed, d)[0]).not.toBe(kidsOnDuty(feed, addDays(d, 1))[0]);
+    }
+  });
+});
