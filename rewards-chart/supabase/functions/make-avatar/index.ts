@@ -62,10 +62,20 @@ const STYLES: Record<string, Style> = {
     art: 'bright 3D cartoon adventure art',
     scene: 'the deck of a pirate ship on a sparkling sea with a treasure map',
   },
-  sports: {
-    outfit: 'a sports superstar in a bright team jersey and sports gear, with a ball, celebrating a big win (an original team, no real club or brand)',
+  basketball: {
+    outfit: 'a basketball star in a bright original team jersey, shorts and high-top sneakers, spinning a basketball on one finger (no real team or brand)',
+    art: 'glossy 3D basketball video game cover art with dramatic arena lighting',
+    scene: 'a basketball court in a packed arena under spotlights, with the hoop and net behind',
+  },
+  afl: {
+    outfit: 'an Australian Rules football star in a sleeveless guernsey in original colours (no real club), shorts and long socks, holding an oval AFL-style football ready to kick',
     art: 'glossy 3D sports video game cover art with dramatic lighting',
-    scene: 'a packed stadium under floodlights with confetti and a cheering crowd',
+    scene: 'a big oval footy ground under lights with the tall goal posts, a cheering crowd and confetti',
+  },
+  martial: {
+    outfit: 'a martial arts champion in a crisp white gi with a black belt, in a strong karate stance with a focused look',
+    art: 'dynamic 3D fighting-game character art with energy swirls and speed lines',
+    scene: 'a dojo with wooden floors, paper screens and a glowing sunrise through the window',
   },
   skater: {
     outfit: 'a cool skateboarder in a hoodie, cap and sneakers holding a skateboard',
