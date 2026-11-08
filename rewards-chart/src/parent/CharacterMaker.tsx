@@ -7,19 +7,13 @@ const STYLES = [
   { id: 'surprise', label: '🎲 Surprise me' },
   { id: 'hero', label: 'Action hero' },
   { id: 'armour', label: 'Sci-fi armour' },
-  { id: 'explorer', label: 'Explorer' },
   { id: 'space', label: 'Space ranger' },
-  { id: 'ninja', label: 'Ninja' },
   { id: 'knight', label: 'Knight' },
-  { id: 'wizard', label: 'Wizard' },
-  { id: 'racer', label: 'Racing driver' },
-  { id: 'pirate', label: 'Pirate captain' },
   { id: 'basketball', label: 'Basketball star' },
   { id: 'afl', label: 'Aussie Rules (AFL)' },
   { id: 'martial', label: 'Martial arts' },
+  { id: 'soccer', label: 'Soccer star' },
   { id: 'skater', label: 'Skater' },
-  { id: 'pixel', label: 'Pixel art' },
-  { id: 'comic', label: 'Comic book' },
 ];
 
 /** Shrinks a phone photo to at most 1024px and turns it into a JPEG data URL. */

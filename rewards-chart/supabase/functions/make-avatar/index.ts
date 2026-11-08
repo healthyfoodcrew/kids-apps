@@ -27,40 +27,15 @@ const STYLES: Record<string, Style> = {
     art: 'glossy 3D game render with neon rim lighting',
     scene: 'a futuristic hangar with blue holograms and light beams',
   },
-  explorer: {
-    outfit: 'a jungle explorer with a backpack, rope, goggles on the forehead and rolled-up sleeves',
-    art: 'warm painterly 3D adventure game art',
-    scene: 'a misty jungle with ancient temple ruins and vines',
-  },
   space: {
     outfit: 'a space ranger in a bright astronaut suit with a glowing badge, helmet tucked under one arm',
     art: 'clean 3D animated film style with soft lighting',
     scene: 'outer space with a ringed planet, stars and a small rocket',
   },
-  ninja: {
-    outfit: 'a cool ninja in a coloured hooded outfit and headband, mask pulled down so the face shows, no weapons',
-    art: 'dynamic 3D anime-inspired cartoon art with speed lines',
-    scene: 'rooftops at sunset with paper lanterns and cherry blossom petals',
-  },
   knight: {
     outfit: 'a brave young knight in shiny armour with a cape and a crest shield on the back, no sword',
     art: 'storybook 3D fantasy game art',
     scene: 'a castle courtyard with flags flying and a friendly dragon peeking in the distance',
-  },
-  wizard: {
-    outfit: 'a young wizard in a starry robe and a pointy hat, holding a glowing staff with magic sparkles',
-    art: 'magical 3D animated film style with glowing particles',
-    scene: 'a cosy magic library with floating books and candles',
-  },
-  racer: {
-    outfit: 'a racing driver in a sponsor-free racing suit with a helmet held at the hip',
-    art: 'shiny 3D racing game art with motion blur',
-    scene: 'a racetrack pit lane with a colourful race car and chequered flags',
-  },
-  pirate: {
-    outfit: 'a friendly pirate captain with a tricorn hat, long coat and a parrot on the shoulder, no weapons',
-    art: 'bright 3D cartoon adventure art',
-    scene: 'the deck of a pirate ship on a sparkling sea with a treasure map',
   },
   basketball: {
     outfit: 'a basketball star in a bright original team jersey, shorts and high-top sneakers, spinning a basketball on one finger (no real team or brand)',
@@ -77,25 +52,20 @@ const STYLES: Record<string, Style> = {
     art: 'dynamic 3D fighting-game character art with energy swirls and speed lines',
     scene: 'a dojo with wooden floors, paper screens and a glowing sunrise through the window',
   },
+  soccer: {
+    outfit: 'a soccer star in a bright original team kit with shin pads and boots, a soccer ball at their feet or balanced on a knee (no real club or brand)',
+    art: 'glossy 3D soccer video game cover art with dramatic stadium lighting',
+    scene: 'a green soccer pitch in a huge stadium under floodlights, the goal net behind and fans cheering',
+  },
   skater: {
     outfit: 'a cool skateboarder in a hoodie, cap and sneakers holding a skateboard',
     art: 'street-art cartoon style with graffiti colours and thick outlines',
     scene: 'a skate park with ramps and colourful graffiti walls',
   },
-  pixel: {
-    outfit: 'a retro video game hero in a colourful tunic',
-    art: 'detailed 16-bit pixel art sprite portrait, crisp pixels, limited bright palette',
-    scene: 'a pixel-art world with blocky clouds, hills and floating coins',
-  },
-  comic: {
-    outfit: 'an original comic book superhero with a cape, chest emblem shaped like a star, and a mask pushed up on the forehead',
-    art: 'bold comic book illustration with ink outlines, halftone dots and a POW-style burst behind',
-    scene: 'a city skyline at dusk',
-  },
 };
 
 // A random twist on every go, so making another one gives something new.
-const EXPRESSIONS = ['a huge cheeky grin', 'a confident smirk', 'a big excited laugh', 'a determined game face', 'a friendly wink', 'a proud victory smile'];
+const EXPRESSIONS = ['a huge cheeky grin', 'a confident smirk', 'a big excited laugh', 'a determined game face', 'a proud victory smile'];
 const POSES = [
   'head-and-shoulders, looking straight at the camera',
   'three-quarter view with arms crossed',
@@ -133,6 +103,7 @@ function buildPrompt(styleId: string, age: number | null): { prompt: string; sty
     `Pose: ${pick(POSES)}, with ${pick(EXPRESSIONS)}. Add ${pick(EXTRAS)}.`,
     `Background: ${st.scene}.`,
     ageLook(age),
+    'Both eyes open, no winking.',
     'Keep their face shape, hair, skin tone and eye colour recognisable so the family can tell who it is.',
     'Square portrait, the character fills most of the frame. Age-appropriate and wholesome.',
     'No text, no logos, no weapons, and not any existing or copyrighted character.',
