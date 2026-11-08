@@ -65,7 +65,7 @@ const STYLES: Record<string, Style> = {
 };
 
 // A random twist on every go, so making another one gives something new.
-const EXPRESSIONS = ['a huge cheeky grin', 'a confident smirk', 'a big excited laugh', 'a determined game face', 'a proud victory smile'];
+const EXPRESSIONS = ['a big cheeky grin', 'a confident grin', 'a big excited laugh', 'a determined game face', 'a proud victory smile'];
 const POSES = [
   'head-and-shoulders, looking straight at the camera',
   'three-quarter view with arms crossed',
@@ -75,36 +75,37 @@ const POSES = [
   'thumbs up to the camera',
 ];
 const EXTRAS = [
-  'a glowing trail of sparkles',
+  'a cool energy glow around the fists',
   'a cool pet sidekick (a small robot or a puppy)',
   'a shiny trophy',
   'confetti bursting in the air',
-  'gold stars floating around',
-  'a pair of cool sunglasses pushed up on the head',
+  'a champion medal around the neck',
+  'a sweatband on the forehead',
   'a backpack covered in badges',
   'glowing sneakers',
 ];
-const COLOURS = ['red and gold', 'turquoise and purple', 'green and orange', 'blue and silver', 'pink and yellow', 'black and neon green', 'orange and teal'];
+const COLOURS = ['red and gold', 'turquoise and navy', 'green and orange', 'blue and silver', 'red and black', 'black and neon green', 'orange and teal'];
 const pick = <T,>(list: T[]) => list[Math.floor(Math.random() * list.length)];
 
 function ageLook(age: number | null): string {
   if (!age) return '';
-  if (age <= 8) return `They are ${age} years old: draw them as a young ${age}-year-old kid with a playful, cute, youthful look and child proportions, not a teenager.`;
-  if (age <= 12) return `They are ${age} years old: draw them as a ${age}-year-old pre-teen with a cooler, slightly more grown-up look, still clearly a kid, not an adult.`;
-  return `They are ${age} years old: draw them as a teenager, not an adult.`;
+  if (age <= 8) return `They are ${age} years old: draw him as a young ${age}-year-old boy with a playful, energetic, cheeky look and young boy proportions, not a teenager.`;
+  if (age <= 12) return `They are ${age} years old: draw him as a ${age}-year-old pre-teen boy with a cooler, sportier, slightly more grown-up look, still clearly a kid, not an adult.`;
+  return `They are ${age} years old: draw him as a teenage boy, not an adult.`;
 }
 
 function buildPrompt(styleId: string, age: number | null): { prompt: string; style: string } {
   const id = STYLES[styleId] ? styleId : pick(Object.keys(STYLES));
   const st = STYLES[id];
   const prompt = [
-    `Turn the child in this photo into an original video-game character: ${st.art}.`,
-    `Dress them as ${st.outfit}, with a ${pick(COLOURS)} colour scheme.`,
+    `Turn the boy in this photo into an original video-game character: ${st.art}.`,
+    `Dress him as ${st.outfit}, with a ${pick(COLOURS)} colour scheme.`,
     `Pose: ${pick(POSES)}, with ${pick(EXPRESSIONS)}. Add ${pick(EXTRAS)}.`,
     `Background: ${st.scene}.`,
     ageLook(age),
+    'Make him look like a real boy: sporty, tough and cool, with a natural boyish face and his real hairstyle. No makeup, no lipstick, no eyeliner, no long eyelashes, no glossy or pouty lips, no glitter, no hearts, no flamboyant or overly pretty styling.',
     'Both eyes open, no winking.',
-    'Keep their face shape, hair, skin tone and eye colour recognisable so the family can tell who it is.',
+    'Keep his face shape, hair, skin tone and eye colour recognisable so the family can tell who it is.',
     'Square portrait, the character fills most of the frame. Age-appropriate and wholesome.',
     'No text, no logos, no weapons, and not any existing or copyrighted character.',
   ].join(' ');
