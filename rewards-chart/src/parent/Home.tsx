@@ -146,10 +146,11 @@ export function ParentHome() {
             return (
               <div key={s.kid.id} className="p-row" style={{ flexWrap: 'wrap' }}>
                 <KidDot name={s.kid.name} color={inkOf(s.kid.color)} />
-                <div className="grow">
+                <div className="grow" style={{ flexBasis: '60%' }}>
                   <div className="t">{s.kid.name}</div>
                   <div className="m" style={t.running ? { color: '#2442d6', fontWeight: 700 } : undefined}>{status}</div>
                 </div>
+                <div style={{ display: 'flex', gap: 8, marginLeft: 'auto' }}>
                 {t.running && (
                   <button className="p-btn" disabled={busy === `stop-${s.kid.id}`} onClick={async () => { setBusy(`stop-${s.kid.id}`); const e = await stopTech(s.kid.id); setBusy(null); setMsg(e); }}>
                     Stop
@@ -179,6 +180,7 @@ export function ParentHome() {
                 >
                   Reset time
                 </button>
+                </div>
               </div>
             );
           })}

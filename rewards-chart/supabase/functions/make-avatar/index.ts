@@ -39,12 +39,16 @@ function json(body: unknown, status = 200) {
 Deno.serve(async (req) => {
   if (req.method === 'OPTIONS') return new Response('ok', { headers: CORS });
   if (req.method !== 'POST') return json({ error: 'Use POST' }, 405);
+  const started = Date.now();
 
   const url = Deno.env.get('SUPABASE_URL')!;
   const anon = Deno.env.get('SUPABASE_ANON_KEY')!;
   const service = Deno.env.get('SUPABASE_SERVICE_ROLE_KEY')!;
   const openaiKey = Deno.env.get('OPENAI_API_KEY');
-  if (!openaiKey) return json({ error: 'The AI key has not been added yet (OPENAI_API_KEY).' }, 500);
+  if (!openaiKey) {
+    console.log('[make-avatar] OPENAI_API_KEY is missing');
+    return json({ error: 'The AI key has not been added yet (OPENAI_API_KEY).' }, 500);
+  }
 
   // Who is calling? Must be a parent, or the iPad with parent mode unlocked.
   const asUser = createClient(url, anon, { global: { headers: { Authorization: req.headers.get('Authorization') ?? '' } } });
@@ -65,41 +69,70 @@ Deno.serve(async (req) => {
   const { data: kid } = await admin.from('kids').select('id').eq('id', kid_id).maybeSingle();
   if (!kid) return json({ error: 'Child not found' }, 404);
 
-  // The server function may only run for 150 seconds, so give the AI 130 and fail politely after that.
-  const callAI = async (extra: Record<string, unknown>) => {
+  // The server kills this function 150 seconds after it starts, so everything has to be
+  // finished well before that. Faster picture models are tried first; a model or setting the
+  // account can't use fails in a second and the next one is tried.
+  const DEADLINE_MS = 115_000;
+  const log = (...a: unknown[]) => console.log(`[make-avatar +${((Date.now() - started) / 1000).toFixed(1)}s]`, ...a);
+  const ATTEMPTS: Record<string, unknown>[] = [
+    { model: 'gpt-image-2.5-flare', quality: 'medium', size: '1024x1024' },
+    { model: 'gpt-image-1-mini', quality: 'medium', size: '1024x1024' },
+    { model: 'gpt-image-2', quality: 'low', complexity: 'low', size: '1024x1024' },
+  ];
+
+  const callAI = async (opts: Record<string, unknown>) => {
+    const left = DEADLINE_MS - (Date.now() - started);
+    if (left < 10_000) throw new Error('timeout');
     const ctrl = new AbortController();
-    const timer = setTimeout(() => ctrl.abort(), 130_000);
-    try {
+    let timer: number | undefined;
+    const timeout = new Promise<never>((_, reject) => {
+      timer = setTimeout(() => {
+        ctrl.abort();
+        reject(new Error('timeout'));
+      }, left);
+    });
+    const request = (async () => {
       const res = await fetch('https://api.openai.com/v1/images/edits', {
         method: 'POST',
         signal: ctrl.signal,
         headers: { Authorization: `Bearer ${openaiKey}`, 'Content-Type': 'application/json' },
         body: JSON.stringify({
-          model: 'gpt-image-2',
           images: [{ image_url: image }],
           prompt: BASE_PROMPT(STYLES[style] ?? STYLES.hero),
           output_format: 'jpeg',
           output_compression: 88,
           n: 1,
-          ...extra,
+          ...opts,
         }),
       });
       return { res, body: await res.json().catch(() => null) };
+    })();
+    try {
+      return await Promise.race([request, timeout]);
     } finally {
       clearTimeout(timer);
     }
   };
 
-  let ai: { res: Response; body: any };
+  log('start', { style, photoKB: Math.round(image.length / 1024) });
+  let ai: { res: Response; body: any } | null = null;
   try {
-    // Low complexity is much faster and keeps the face closer to the photo.
-    ai = await callAI({ complexity: 'low', size: '1024x1024' });
-    if (!ai.res.ok && /complexity|size/i.test(ai.body?.error?.message ?? '')) ai = await callAI({});
-  } catch {
+    for (const opts of ATTEMPTS) {
+      log('trying', opts.model);
+      ai = await callAI(opts);
+      log('reply', opts.model, ai.res.status, ai.res.ok ? 'ok' : ai.body?.error?.message);
+      if (ai.res.ok) break;
+      const m: string = ai.body?.error?.message ?? '';
+      // Only move on when the model or a setting isn't available; real errors stop here.
+      const unsupported = ai.res.status === 404 || /model|parameter|unsupported|not supported|invalid value|unknown|does not exist|access/i.test(m);
+      if (!unsupported || /safety|policy|moderation/i.test(m)) break;
+    }
+  } catch (e) {
+    log('gave up', String(e));
     return json({ error: 'The AI took too long this time. Please try again in a minute.' }, 504);
   }
-  if (!ai.res.ok) {
-    const message: string = ai.body?.error?.message ?? `AI service error (${ai.res.status})`;
+  if (!ai || !ai.res.ok) {
+    const message: string = ai?.body?.error?.message ?? `AI service error (${ai?.res.status ?? '?'})`;
     const declined = /safety|policy|moderation|rejected/i.test(message);
     return json({ error: declined ? 'The AI service declined this photo. Try a different photo.' : message }, 502);
   }
@@ -117,6 +150,7 @@ Deno.serve(async (req) => {
   const path = `${kid_id}/${Date.now()}.jpg`;
   const { error: upError } = await admin.storage.from('avatars').upload(path, bytes, { contentType: 'image/jpeg' });
   if (upError) return json({ error: upError.message }, 500);
+  log('saved', path);
 
   const { data: signed } = await admin.storage.from('avatars').createSignedUrl(path, 60 * 60);
   return json({ path, url: signed?.signedUrl ?? null });
