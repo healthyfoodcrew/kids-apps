@@ -154,8 +154,6 @@ export function TechCard({
   );
 }
 
-const CHOICES = [10, 15, 20, 30, 45, 60, 90, 120];
-
 function niceTime(mins: number): string {
   if (mins < 60) return `${mins} MIN`;
   const h = Math.floor(mins / 60);
@@ -163,39 +161,46 @@ function niceTime(mins: number): string {
   return m ? `${h} HR ${m} MIN` : `${h} ${h === 1 ? 'HOUR' : 'HOURS'}`;
 }
 
-/** "How long do you want to play?": any amount up to what's left this week. */
+const UP = 'M6 15l6-6 6 6';
+const DOWN = 'M6 9l6 6 6-6';
+
+/** "How long do you want to play?": hours and minutes dials, up to what's left this week. */
 function TimePicker({ maxSeconds, onPick, onClose }: { maxSeconds: number; onPick(seconds: number): void; onClose(): void }) {
   const maxMins = Math.floor(maxSeconds / 60);
-  const options = CHOICES.filter((m) => m < maxMins);
-  // Pick-your-own, in 5 minute steps (e.g. 1 hr 15 min).
-  const [custom, setCustom] = useState(Math.min(75, maxMins));
-  const step = (d: number) => setCustom((c) => Math.max(5, Math.min(maxMins, (Math.round(c / 5) + d) * 5)));
+  const [total, setTotal] = useState(Math.min(30, maxMins));
+  const clamp = (m: number) => Math.max(Math.min(5, maxMins), Math.min(maxMins, m));
+  const hours = Math.floor(total / 60);
+  const mins = total % 60;
+
+  const dial = (label: string, value: number, up: () => void, down: () => void, canUp: boolean, canDown: boolean) => (
+    <div className="tp-dial">
+      <button onClick={up} disabled={!canUp} aria-label={`More ${label.toLowerCase()}`}><Icon d={UP} size={34} strokeWidth={3.2} /></button>
+      <span className="tp-num">{String(value).padStart(label === 'MINUTES' ? 2 : 1, '0')}</span>
+      <span className="tp-unit">{label}</span>
+      <button onClick={down} disabled={!canDown} aria-label={`Less ${label.toLowerCase()}`}><Icon d={DOWN} size={34} strokeWidth={3.2} /></button>
+    </div>
+  );
+
   return (
     <div className="tp-overlay" role="dialog" aria-label="How long do you want to play?" onClick={onClose}>
       <div className="tp-card" onClick={(e) => e.stopPropagation()}>
         <h3>HOW LONG DO YOU WANT TO PLAY?</h3>
-        <p className="tp-sub">You have {maxMins >= 60 ? `${Math.floor(maxMins / 60)} hr ${maxMins % 60 ? `${maxMins % 60} min` : ''}` : `${maxMins} min`} left this week</p>
-        <div className="tp-grid">
-          {options.map((m) => (
-            <button key={m} className="tp-opt" onClick={() => onPick(m * 60)}>
-              <b>{m >= 60 && m % 60 === 0 ? m / 60 : m}</b>
-              <span>{m >= 60 && m % 60 === 0 ? (m === 60 ? 'HOUR' : 'HOURS') : 'MIN'}</span>
-            </button>
-          ))}
-          <button className="tp-opt all" onClick={() => onPick(maxSeconds)}>
-            <b>ALL</b>
-            <span>{maxMins} MIN</span>
-          </button>
+        <p className="tp-sub">You have {niceTime(maxMins).toLowerCase()} left this week</p>
+        <div className="tp-dials">
+          {dial('HOURS', hours, () => setTotal(clamp(total + 60)), () => setTotal(clamp(total - 60)), total + 60 <= maxMins, total - 60 >= 5)}
+          <span className="tp-colon">:</span>
+          {dial(
+            'MINUTES',
+            mins,
+            () => setTotal(clamp(total + 5)),
+            () => setTotal(clamp(total - 5)),
+            total + 5 <= maxMins,
+            total - 5 >= 5,
+          )}
         </div>
-        <div className="tp-custom">
-          <span className="tp-custom-label">OR PICK YOUR OWN</span>
-          <div className="tp-stepper">
-            <button onClick={() => step(-1)} disabled={custom <= 5} aria-label="5 minutes less">−</button>
-            <span className="tp-amount">{niceTime(custom)}</span>
-            <button onClick={() => step(1)} disabled={custom >= maxMins} aria-label="5 minutes more">+</button>
-            <button className="tp-go" onClick={() => onPick(custom * 60)}>GO</button>
-          </div>
-        </div>
+        <button className="tp-go" onClick={() => onPick(total * 60)}>
+          <Icon d={PLAY} size={24} filled />PLAY {niceTime(total)}
+        </button>
         <button className="tp-cancel" onClick={onClose}>NOT NOW</button>
       </div>
     </div>
