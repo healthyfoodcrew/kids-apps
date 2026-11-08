@@ -14,6 +14,7 @@ const STYLES = [
   { id: 'wizard', label: 'Wizard' },
   { id: 'racer', label: 'Racing driver' },
   { id: 'pirate', label: 'Pirate captain' },
+  { id: 'sports', label: 'Sports star' },
   { id: 'skater', label: 'Skater' },
   { id: 'pixel', label: 'Pixel art' },
   { id: 'comic', label: 'Comic book' },
@@ -113,6 +114,17 @@ export function CharacterMaker({ kid }: { kid: Kid }) {
           <button className="p-btn primary block" onClick={make} disabled={busy}>
             {busy ? 'Creating character… (up to a minute)' : `Make ${kid.name} a game character`}
           </button>
+          <button
+            className="p-btn block"
+            disabled={busy}
+            onClick={() => {
+              setPhoto(null);
+              setMsg(null);
+              if (fileRef.current) fileRef.current.value = '';
+            }}
+          >
+            Cancel
+          </button>
           <p className="p-label" style={{ textTransform: 'none', letterSpacing: 0, fontWeight: 600 }}>
             The photo is sent to an AI image service to draw the character. Only the finished character is saved.
           </p>
@@ -122,10 +134,26 @@ export function CharacterMaker({ kid }: { kid: Kid }) {
       {result && (
         <div className="p-card p-section" style={{ marginTop: 4 }}>
           {result.url && <img src={result.url} alt={`${kid.name} as a game character`} style={{ width: '100%', borderRadius: 16 }} />}
+          <button className="p-btn primary block" onClick={keep} disabled={busy}>Use this one</button>
           <div className="p-grid2">
             <button className="p-btn" onClick={make} disabled={busy}>{busy ? 'Creating…' : 'Try again'}</button>
-            <button className="p-btn primary" onClick={keep} disabled={busy}>Use this one</button>
+            <button className="p-btn" onClick={() => setResult(null)} disabled={busy}>Change style</button>
           </div>
+          <button
+            className="p-btn block"
+            disabled={busy}
+            onClick={() => {
+              setResult(null);
+              setPhoto(null);
+              setMsg(null);
+              if (fileRef.current) fileRef.current.value = '';
+            }}
+          >
+            Cancel
+          </button>
+          <p className="p-label" style={{ textTransform: 'none', letterSpacing: 0, fontWeight: 600, margin: 0 }}>
+            Style: {STYLES.find((x) => x.id === style)?.label}. Try again makes a new one in the same style.
+          </p>
         </div>
       )}
 

@@ -62,6 +62,11 @@ const STYLES: Record<string, Style> = {
     art: 'bright 3D cartoon adventure art',
     scene: 'the deck of a pirate ship on a sparkling sea with a treasure map',
   },
+  sports: {
+    outfit: 'a sports superstar in a bright team jersey and sports gear, with a ball, celebrating a big win (an original team, no real club or brand)',
+    art: 'glossy 3D sports video game cover art with dramatic lighting',
+    scene: 'a packed stadium under floodlights with confetti and a cheering crowd',
+  },
   skater: {
     outfit: 'a cool skateboarder in a hoodie, cap and sneakers holding a skateboard',
     art: 'street-art cartoon style with graffiti colours and thick outlines',
