@@ -301,6 +301,14 @@ button:disabled { cursor: default; }
 .tp-opt.all { background: var(--green); color: var(--green-ink); box-shadow: 0 5px 0 #2f8f2f; }
 .tp-opt.all span { color: var(--green-ink); }
 .tp-opt:active { transform: translateY(3px); }
+.tp-custom { width: 100%; margin-top: 8px; padding-top: 14px; border-top: 2px solid var(--edge); display: flex; flex-direction: column; align-items: center; gap: 10px; }
+.tp-custom-label { font-size: 13px; font-weight: 900; letter-spacing: 0.12em; color: var(--muted); }
+.tp-stepper { display: flex; align-items: center; gap: 10px; width: 100%; }
+.tp-stepper button { width: 64px; height: 64px; border: 0; border-radius: 18px; background: var(--panel-2); color: #fff; font-family: var(--display); font-size: 38px; line-height: 1; box-shadow: 0 5px 0 rgba(0, 0, 0, 0.35); flex-shrink: 0; }
+.tp-stepper button:disabled { opacity: 0.35; }
+.tp-stepper button:active:not(:disabled) { transform: translateY(3px); }
+.tp-amount { flex: 1; font-family: var(--display); font-size: 30px; white-space: nowrap; }
+.tp-stepper .tp-go { width: auto; padding: 0 22px; background: var(--green); color: var(--green-ink); font-size: 28px; box-shadow: 0 5px 0 #2f8f2f; }
 .tp-cancel { margin-top: 8px; border: 0; background: none; color: var(--muted); font-family: var(--display); font-size: 20px; letter-spacing: 0.06em; padding: 10px 20px; }
 
 /* Bonus */

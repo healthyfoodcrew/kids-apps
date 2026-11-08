@@ -156,10 +156,20 @@ export function TechCard({
 
 const CHOICES = [10, 15, 20, 30, 45, 60, 90, 120];
 
+function niceTime(mins: number): string {
+  if (mins < 60) return `${mins} MIN`;
+  const h = Math.floor(mins / 60);
+  const m = mins % 60;
+  return m ? `${h} HR ${m} MIN` : `${h} ${h === 1 ? 'HOUR' : 'HOURS'}`;
+}
+
 /** "How long do you want to play?": any amount up to what's left this week. */
 function TimePicker({ maxSeconds, onPick, onClose }: { maxSeconds: number; onPick(seconds: number): void; onClose(): void }) {
   const maxMins = Math.floor(maxSeconds / 60);
   const options = CHOICES.filter((m) => m < maxMins);
+  // Pick-your-own, in 5 minute steps (e.g. 1 hr 15 min).
+  const [custom, setCustom] = useState(Math.min(75, maxMins));
+  const step = (d: number) => setCustom((c) => Math.max(5, Math.min(maxMins, (Math.round(c / 5) + d) * 5)));
   return (
     <div className="tp-overlay" role="dialog" aria-label="How long do you want to play?" onClick={onClose}>
       <div className="tp-card" onClick={(e) => e.stopPropagation()}>
@@ -176,6 +186,15 @@ function TimePicker({ maxSeconds, onPick, onClose }: { maxSeconds: number; onPic
             <b>ALL</b>
             <span>{maxMins} MIN</span>
           </button>
+        </div>
+        <div className="tp-custom">
+          <span className="tp-custom-label">OR PICK YOUR OWN</span>
+          <div className="tp-stepper">
+            <button onClick={() => step(-1)} disabled={custom <= 5} aria-label="5 minutes less">−</button>
+            <span className="tp-amount">{niceTime(custom)}</span>
+            <button onClick={() => step(1)} disabled={custom >= maxMins} aria-label="5 minutes more">+</button>
+            <button className="tp-go" onClick={() => onPick(custom * 60)}>GO</button>
+          </div>
         </div>
         <button className="tp-cancel" onClick={onClose}>NOT NOW</button>
       </div>
