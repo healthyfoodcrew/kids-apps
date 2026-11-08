@@ -198,9 +198,21 @@ function TimePicker({ maxSeconds, onPick, onClose }: { maxSeconds: number; onPic
             total - 5 >= 5,
           )}
         </div>
+        <div className="tp-bar" aria-hidden="true">
+          <span className="tp-bar-fill" style={{ width: `${maxMins ? Math.round((total / maxMins) * 100) : 0}%` }} />
+        </div>
+        <div className="tp-bar-key">
+          <span className="now"><i />PLAYING NOW: {niceTime(total)}</span>
+          <span className="later"><i />{maxMins - total > 0 ? `SAVED FOR LATER: ${niceTime(maxMins - total)}` : 'NOTHING LEFT AFTER THIS'}</span>
+        </div>
         <button className="tp-go" onClick={() => onPick(total * 60)}>
           <Icon d={PLAY} size={24} filled />PLAY {niceTime(total)}
         </button>
+        {total < maxMins && (
+          <button className="tp-all" onClick={() => onPick(maxSeconds)}>
+            ALL MY TIME ({niceTime(maxMins)})
+          </button>
+        )}
         <button className="tp-cancel" onClick={onClose}>NOT NOW</button>
       </div>
     </div>
