@@ -109,6 +109,18 @@ export interface TechApproval {
   approved_at: string | null;
 }
 
+export interface CalEvent {
+  id: string;
+  title: string;
+  icon: string;
+  kid_ids: string[]; // empty = whole family
+  day: string; // first (or only) day, YYYY-MM-DD
+  start_time: string | null; // HH:MM:SS, null = all day
+  repeat: 'none' | 'weekly';
+  note: string | null;
+  created_at: string;
+}
+
 export interface FamilyData {
   settings: Settings;
   kids: Kid[];
@@ -119,6 +131,7 @@ export interface FamilyData {
   payouts: Payout[];
   techSessions: TechSession[];
   techApprovals?: TechApproval[];
+  events?: CalEvent[];
 }
 
 export const DEFAULT_SETTINGS: Settings = {

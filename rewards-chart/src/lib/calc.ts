@@ -1,5 +1,5 @@
 // All the game maths in one place, as plain functions so they can be tested.
-import type { Adjustment, BonusLog, Completion, FamilyData, Job, JobPeriod, Kid, Payout, Settings, TechSession } from './types';
+import type { Adjustment, BonusLog, Completion, FamilyData, Job, JobPeriod, Kid, Payout, Settings, TechSession, CalEvent } from './types';
 import { addDays, localParts, timeToSeconds, weekStart, weekdayOf } from './time';
 
 export const STARS_PER_LEVEL = 150;
@@ -402,4 +402,27 @@ export function pendingBonusLogs(data: FamilyData): BonusLog[] {
   return data.bonusLogs
     .filter((b) => b.status === 'pending')
     .sort((a, b) => b.created_at.localeCompare(a.created_at));
+}
+
+// ─────────────────────────────── Calendar ───────────────────────────────
+
+/** Events on one day: one-off events on that date, plus weekly ones on the same weekday from their start. */
+export function eventsOn(events: CalEvent[], day: string): CalEvent[] {
+  return events
+    .filter((e) => (e.repeat === 'weekly' ? e.day <= day && weekdayOf(e.day) === weekdayOf(day) : e.day === day))
+    .sort((a, b) => (a.start_time ?? '').localeCompare(b.start_time ?? '') || a.title.localeCompare(b.title));
+}
+
+/** The seven days (Monday first) of the week `offset` weeks from the one containing `today`. */
+export function weekDays(today: string, offset = 0): string[] {
+  const start = addDays(weekStart(today), offset * 7);
+  return Array.from({ length: 7 }, (_, i) => addDays(start, i));
+}
+
+/** Next upcoming date (today or later) for an event, or null if a one-off has passed. */
+export function nextDate(e: CalEvent, today: string): string | null {
+  if (e.repeat !== 'weekly') return e.day >= today ? e.day : null;
+  if (e.day >= today) return e.day;
+  const diff = (weekdayOf(e.day) - weekdayOf(today) + 7) % 7;
+  return addDays(today, diff);
 }

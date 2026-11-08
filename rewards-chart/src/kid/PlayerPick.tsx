@@ -3,6 +3,7 @@ import { Link } from 'react-router-dom';
 import { Icon, UI_ICONS } from '../components/Icon';
 import { KidAvatar } from '../components/KidAvatar';
 import { summarizeKid, timerState } from '../lib/calc';
+import { WeekCalendar } from './WeekCalendar';
 import { useFamily, useNow } from '../lib/store';
 import { formatMoneyShort, localParts } from '../lib/time';
 
@@ -43,7 +44,7 @@ export function PlayerPick() {
     timer.phase === 'bonus' ? '#5BD45B' : timer.phase === 'move' ? '#FFC94A' : timer.phase === 'none' ? '#B9B6E8' : '#FF6B6B';
 
   return (
-    <main className="pick">
+    <main className="pick with-cal">
       <div className="pick-top">
         <div className="greeting">
           {greeting}! It's <span className="greeting-time">{clock}</span>
@@ -91,6 +92,8 @@ export function PlayerPick() {
           );
         })}
       </div>
+
+      <WeekCalendar events={data.events ?? []} kids={data.kids} today={local.day} />
 
       <Link to="/parent" className="parents-link">
         <Icon d={UI_ICONS.lock} size={18} />

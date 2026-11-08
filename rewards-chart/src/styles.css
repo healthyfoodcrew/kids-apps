@@ -405,6 +405,60 @@ button:disabled { cursor: default; }
 .player .cta { width: 100%; height: 64px; border-radius: 18px; display: flex; align-items: center; justify-content: center; font-family: var(--display); font-size: 26px; letter-spacing: 0.04em; color: var(--ink); background: var(--gold); }
 .parents-link { display: inline-flex; align-items: center; gap: 8px; min-height: 44px; padding: 0 18px; border-radius: 12px; border: 1px solid var(--edge); background: transparent; color: var(--muted); font-weight: 700; text-decoration: none; }
 
+/* Home screen with the family calendar: smaller player cards */
+.pick.with-cal { gap: 22px; padding: 28px max(24px, 3.5vw); justify-content: flex-start; }
+.with-cal .pick-top { gap: 6px; }
+.with-cal .greeting { font-size: clamp(32px, 4.6vw, 48px); }
+.with-cal .pick-top h1.choose { font-size: 18px; margin-top: 6px; }
+.with-cal .pick-grid { gap: 20px; }
+.with-cal .player {
+  display: grid; grid-template-columns: 84px 1fr; grid-template-areas: 'face name' 'face lvl' 'stats stats' 'cta cta';
+  align-items: center; gap: 4px 16px; padding: 18px 20px 18px; border-radius: 28px; box-shadow: 0 8px 0 var(--kid-shadow);
+}
+.with-cal .player .face { grid-area: face; width: 84px; height: 84px; border-radius: 24px; font-size: 46px; }
+.with-cal .player .name { grid-area: name; font-size: 36px; align-self: end; }
+.with-cal .player .lvl { grid-area: lvl; justify-self: start; align-self: start; font-size: 13px; padding: 4px 12px; }
+.with-cal .player .stats { grid-area: stats; margin-top: 8px; gap: 6px; }
+.with-cal .player .row .cash { font-size: 32px; }
+.with-cal .player .bar { height: 12px; }
+.with-cal .player .sub { font-size: 14px; }
+.with-cal .player .cta { grid-area: cta; height: 50px; font-size: 21px; border-radius: 15px; margin-top: 8px; }
+
+/* Family week calendar */
+.week-cal { width: 100%; max-width: 1000px; border: 2px solid var(--edge); padding: 16px 16px 14px; flex: 1; display: flex; flex-direction: column; }
+.wc-head { display: flex; align-items: center; gap: 14px; margin-bottom: 12px; flex-wrap: wrap; }
+.wc-title { display: flex; align-items: baseline; gap: 10px; margin-right: auto; }
+.wc-title h2 { font-size: 26px; letter-spacing: 0.04em; }
+.wc-range { font-size: 14px; font-weight: 800; color: var(--muted); }
+.wc-legend { display: flex; gap: 12px; font-size: 12px; font-weight: 800; color: var(--muted); }
+.wc-legend span { display: inline-flex; align-items: center; gap: 5px; }
+.wc-legend i { width: 10px; height: 10px; border-radius: 99px; }
+.wc-nav { display: flex; gap: 8px; }
+.wc-nav button { width: 44px; height: 44px; border-radius: 12px; border: 0; background: var(--panel-2); color: #fff; display: grid; place-items: center; }
+.wc-nav button:disabled { opacity: 0.35; }
+.wc-add { height: 44px; padding: 0 14px; border-radius: 12px; background: var(--gold); color: var(--ink); font-family: var(--display); font-size: 18px; letter-spacing: 0.04em; display: inline-flex; align-items: center; gap: 6px; text-decoration: none; box-shadow: 0 4px 0 var(--gold-shadow); }
+.wc-grid { flex: 1; display: grid; grid-template-columns: repeat(7, minmax(0, 1fr)); gap: 7px; }
+.wc-day { background: var(--panel-2); border-radius: 16px; padding: 8px 5px; min-height: 290px; display: flex; flex-direction: column; gap: 6px; }
+.wc-day.today { background: var(--gold); color: #3a2600; box-shadow: 0 5px 0 var(--gold-shadow); }
+.wc-day.past { opacity: 0.5; }
+.wc-date { display: flex; flex-direction: column; align-items: center; line-height: 1; gap: 2px; margin-bottom: 2px; }
+.wc-date .dn { font-size: 12px; font-weight: 900; letter-spacing: 0.08em; opacity: 0.85; }
+.wc-date .dd { font-family: var(--display); font-size: 28px; }
+.wc-events { display: flex; flex-direction: column; gap: 6px; }
+.wc-ev { border: 0; text-align: left; background: rgba(255, 255, 255, 0.07); border-left: 4px solid var(--ev); border-radius: 10px; padding: 6px 6px 7px; color: inherit; font: inherit; display: flex; flex-direction: column; gap: 3px; }
+.wc-day.today .wc-ev { background: rgba(58, 38, 0, 0.12); }
+.wc-ev .ev-top { display: flex; align-items: center; gap: 4px; font-size: 11px; font-weight: 900; }
+.wc-ev .ev-title { font-size: 13px; font-weight: 800; line-height: 1.15; overflow-wrap: anywhere; display: -webkit-box; -webkit-line-clamp: 3; -webkit-box-orient: vertical; overflow: hidden; }
+.wc-pop { position: fixed; inset: 0; z-index: 50; background: rgba(8, 6, 30, 0.7); display: grid; place-items: center; padding: 24px; }
+.wc-pop-card { width: min(420px, 86vw); background: var(--panel); border: 4px solid var(--ev); border-radius: 28px; padding: 26px; display: flex; flex-direction: column; align-items: center; gap: 8px; text-align: center; }
+.wc-pop-card .pop-icon { width: 80px; height: 80px; border-radius: 22px; background: var(--ev); display: grid; place-items: center; }
+.wc-pop-card h3 { margin: 6px 0 0; font-family: var(--display); font-weight: 400; font-size: 34px; line-height: 1.05; }
+.wc-pop-card p { margin: 0; }
+.wc-pop-card .pop-when { font-size: 18px; font-weight: 800; }
+.wc-pop-card .pop-who { font-size: 15px; font-weight: 900; letter-spacing: 0.08em; color: var(--ev); }
+.wc-pop-card .pop-note { margin-top: 4px; background: var(--panel-2); border-radius: 14px; padding: 10px 14px; font-size: 18px; font-weight: 800; }
+.wc-pop-card .pop-close { margin-top: 10px; width: 100%; height: 56px; border: 0; border-radius: 16px; background: var(--gold); color: var(--ink); font-family: var(--display); font-size: 24px; letter-spacing: 0.04em; }
+
 /* PIN pad */
 .pin-screen { min-height: 100vh; min-height: 100dvh; display: flex; flex-direction: column; align-items: center; justify-content: center; gap: 22px; padding: 24px; }
 .pin-screen h1 { margin: 0; font-family: var(--display); font-weight: 400; font-size: 40px; }
@@ -514,7 +568,7 @@ button:disabled { cursor: default; }
   position: fixed; left: 0; right: 0; bottom: 0; z-index: 10;
   background: #fff; border-top: 1px solid var(--p-line);
   padding: 8px 6px max(14px, env(safe-area-inset-bottom));
-  display: grid; grid-template-columns: repeat(4, minmax(0, 1fr));
+  display: grid; grid-template-columns: repeat(5, minmax(0, 1fr));
 }
 .p-nav a { display: flex; flex-direction: column; align-items: center; gap: 4px; min-height: 44px; padding-top: 6px; font-size: 12px; font-weight: 600; text-decoration: none; color: var(--p-muted); }
 .p-nav a.active { color: var(--p-blue-ink); }

@@ -6,6 +6,7 @@ import { useAuth, useNow } from '../lib/store';
 const TABS = [
   { to: '/parent', label: 'Today', icon: UI_ICONS.home, end: true },
   { to: '/parent/adjust', label: 'Give / take', icon: UI_ICONS.plusminus, end: false },
+  { to: '/parent/calendar', label: 'Calendar', icon: 'M4 6h16v14H4z M4 10h16 M8 3v4 M16 3v4', end: false },
   { to: '/parent/payday', label: 'Pay day', icon: UI_ICONS.wallet, end: false },
   { to: '/parent/setup', label: 'Setup', icon: UI_ICONS.settings, end: false },
 ];

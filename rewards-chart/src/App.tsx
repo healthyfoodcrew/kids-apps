@@ -6,6 +6,7 @@ import { PlayerPick } from './kid/PlayerPick';
 import { useAuth, useCanManage } from './lib/store';
 import { supabase } from './lib/supabase';
 import { Adjust } from './parent/Adjust';
+import { Calendar } from './parent/Calendar';
 import { ParentHome } from './parent/Home';
 import { Jobs } from './parent/Jobs';
 import { Payday } from './parent/Payday';
@@ -63,6 +64,7 @@ function ParentRoutes() {
       <Route index element={<ParentHome />} />
       <Route path="adjust" element={<Adjust />} />
       <Route path="payday" element={<Payday />} />
+      <Route path="calendar" element={<Calendar />} />
       <Route path="setup" element={<SetupMenu />} />
       <Route path="setup/jobs" element={<Jobs />} />
       <Route path="setup/kids" element={<KidsSettings />} />

@@ -132,7 +132,19 @@ const EMPTY: FamilyData = {
   payouts: [],
   techSessions: [],
   techApprovals: [],
+  events: [],
 };
+
+export interface EventInput {
+  id?: string;
+  title: string;
+  icon: string;
+  kid_ids: string[];
+  day: string;
+  start_time: string | null;
+  repeat: 'none' | 'weekly';
+  note: string | null;
+}
 
 export interface JobInput {
   id?: string;
@@ -180,6 +192,8 @@ export interface FamilyState {
   requestTech(kidId: string): Promise<string | null>;
   approveTech(kidId: string): Promise<string | null>;
   revokeTech(kidId: string): Promise<string | null>;
+  saveEvent(ev: EventInput): Promise<string | null>;
+  deleteEvent(id: string): Promise<string | null>;
   makeAvatar(kidId: string, photo: string, style: string): Promise<{ path?: string; url?: string | null; error?: string }>;
 }
 
@@ -208,7 +222,7 @@ export function FamilyProvider({ children }: { children: ReactNode }) {
   const refresh = useCallback(async () => {
     if (!supabase || !session || !role) return;
     const since = addDays(today(), -120);
-    const [settings, kids, jobs, completions, bonusLogs, adjustments, payouts, techSessions, techApprovals] = await Promise.all([
+    const [settings, kids, jobs, completions, bonusLogs, adjustments, payouts, techSessions, techApprovals, events] = await Promise.all([
       supabase.from('settings').select('*').eq('id', 1).maybeSingle(),
       supabase.from('kids').select('*').order('sort'),
       supabase.from('jobs').select('*').order('sort'),
@@ -218,8 +232,9 @@ export function FamilyProvider({ children }: { children: ReactNode }) {
       supabase.from('payouts').select('*').gte('week_start', since),
       supabase.from('tech_sessions').select('*').gte('started_at', `${addDays(today(), -14)}T00:00:00Z`),
       supabase.from('tech_approvals').select('*').gte('day', addDays(today(), -7)),
+      supabase.from('events').select('*').order('day'),
     ]);
-    const firstError = [settings, kids, jobs, completions, bonusLogs, adjustments, payouts, techSessions, techApprovals].find((r) => r.error)?.error;
+    const firstError = [settings, kids, jobs, completions, bonusLogs, adjustments, payouts, techSessions, techApprovals, events].find((r) => r.error)?.error;
     if (firstError) {
       setError(firstError.message);
       setLoading(false);
@@ -237,6 +252,7 @@ export function FamilyProvider({ children }: { children: ReactNode }) {
       payouts: (payouts.data ?? []).map((p) => ({ ...p, amount: Number(p.amount) })),
       techSessions: techSessions.data ?? [],
       techApprovals: techApprovals.data ?? [],
+      events: events.data ?? [],
     } as FamilyData);
     setError(null);
     setLoading(false);
@@ -252,7 +268,7 @@ export function FamilyProvider({ children }: { children: ReactNode }) {
       pending = window.setTimeout(() => void refresh(), 250);
     };
     const channel = supabase.channel('family');
-    for (const table of ['settings', 'kids', 'jobs', 'completions', 'bonus_logs', 'adjustments', 'payouts', 'tech_sessions', 'tech_approvals']) {
+    for (const table of ['settings', 'kids', 'jobs', 'completions', 'bonus_logs', 'adjustments', 'payouts', 'tech_sessions', 'tech_approvals', 'events']) {
       channel.on('postgres_changes', { event: '*', schema: 'public', table }, soon);
     }
     channel.subscribe();
@@ -359,6 +375,12 @@ export function FamilyProvider({ children }: { children: ReactNode }) {
           if (stop.error) return stop;
           return db.from('tech_approvals').delete().eq('kid_id', kidId).eq('day', today());
         }),
+      saveEvent: (ev) =>
+        run(() => {
+          const { id, ...rest } = ev;
+          return id ? db.from('events').update(rest).eq('id', id) : db.from('events').insert(rest);
+        }),
+      deleteEvent: (id) => run(() => db.from('events').delete().eq('id', id)),
       makeAvatar: async (kidId, photo, style) => {
         const { data: res, error: e } = await db.functions.invoke('make-avatar', { body: { kid_id: kidId, image: photo, style } });
         if (e) {
