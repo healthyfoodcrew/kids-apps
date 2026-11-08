@@ -66,14 +66,15 @@ const STYLES: Record<string, Style> = {
 
 // A random twist on every go, so making another one gives something new.
 const EXPRESSIONS = ['a big cheeky grin', 'a confident grin', 'a big excited laugh', 'a determined game face', 'a proud victory smile'];
+// Every pose keeps his face towards the camera so it stays true to the photo.
 const POSES = [
-  'head-and-shoulders, looking straight at the camera',
-  'three-quarter view with arms crossed',
-  'mid-action pose leaning into the frame',
-  'victory pose with a fist in the air',
-  'over-the-shoulder look back at the camera',
-  'thumbs up to the camera',
-];
+  'head-and-shoulders, facing the camera',
+  'arms crossed, facing the camera',
+  'victory pose with a fist in the air, face towards the camera',
+  'thumbs up, facing the camera',
+  'holding his gear proudly, facing the camera',
+  'hands on hips like a champion, facing the camera',
+]
 const EXTRAS = [
   'a cool energy glow around the fists',
   'a cool pet sidekick (a small robot or a puppy)',
@@ -98,14 +99,15 @@ function buildPrompt(styleId: string, age: number | null): { prompt: string; sty
   const id = STYLES[styleId] ? styleId : pick(Object.keys(STYLES));
   const st = STYLES[id];
   const prompt = [
-    `Turn the boy in this photo into an original video-game character: ${st.art}.`,
+    'Most important: keep this exact boy\'s real face so he is instantly recognisable as himself. Match his face shape, eye shape and colour, eyebrows, nose, mouth and smile, ears, skin tone, and any freckles, dimples or missing teeth, plus his real hair colour, length and style. Stylise the clothes, scene and lighting, but only lightly stylise the face; do not change his features or make him look like a different child.',
+    `Turn him into an original video-game character: ${st.art}.`,
     `Dress him as ${st.outfit}, with a ${pick(COLOURS)} colour scheme.`,
     `Pose: ${pick(POSES)}, with ${pick(EXPRESSIONS)}. Add ${pick(EXTRAS)}.`,
     `Background: ${st.scene}.`,
     ageLook(age),
-    'Make him look like a real boy: sporty, tough and cool, with a natural boyish face and his real hairstyle. No makeup, no lipstick, no eyeliner, no long eyelashes, no glossy or pouty lips, no glitter, no hearts, no flamboyant or overly pretty styling.',
+    'Make him look like a real boy: sporty, tough and cool, with his own natural boyish face. No makeup, no lipstick, no eyeliner, no long eyelashes, no glossy or pouty lips, no glitter, no hearts, no flamboyant or overly pretty styling.',
     'Both eyes open, no winking.',
-    'Keep his face shape, hair, skin tone and eye colour recognisable so the family can tell who it is.',
+    'Keep the face true to the photo: same person, just in costume.',
     'Square portrait, the character fills most of the frame. Age-appropriate and wholesome.',
     'No text, no logos, no weapons, and not any existing or copyrighted character.',
   ].join(' ');
