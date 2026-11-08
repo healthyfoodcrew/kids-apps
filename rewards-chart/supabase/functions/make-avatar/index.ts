@@ -39,7 +39,7 @@ const STYLES: Record<string, Style> = {
     scene: 'a castle courtyard with flags flying and a friendly dragon peeking in the distance',
   },
   basketball: {
-    outfit: 'a pro basketball player in an original team jersey with a big number on the chest, a headband or wristbands, like an official pro-league player profile photo (no real team, league or brand)',
+    outfit: 'a pro basketball player in an original team jersey with a big number on the chest and wristbands, nothing on his head (no headband, no sweatband, no hat), his real hair showing, like an official pro-league player profile photo (no real team, league or brand)',
     art: 'premium pro basketball player profile portrait, like an official media-day headshot, glossy 3D game style with crisp studio lighting and strong rim light',
     scene: 'a championship celebration blurred behind him in a packed arena: confetti falling, streamers, cheering crowd, bright arena lights and a glowing scoreboard',
     poses: [
