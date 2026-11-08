@@ -3,7 +3,7 @@ import { useNavigate } from 'react-router-dom';
 import { EVENT_ICONS, EventIcon } from '../components/EventIcon';
 import { Icon, UI_ICONS } from '../components/Icon';
 import { eventColor, eventWho } from '../kid/WeekCalendar';
-import { nextDate } from '../lib/calc';
+import { nextDate, weekDays } from '../lib/calc';
 import { useFamily, type EventInput } from '../lib/store';
 import { formatClock, weekdayOf } from '../lib/time';
 import type { CalEvent } from '../lib/types';
@@ -22,18 +22,27 @@ function blank(today: string): EventInput {
 
 /** The add / edit event form. Used on the parents' Calendar tab and on the kids' iPad (adding only). */
 export function EventForm({ initial, onDone }: { initial: EventInput; onDone(): void }) {
-  const { data, saveEvent, deleteEvent } = useFamily();
+  const { data, today, saveEvent, deleteEvent } = useFamily();
   const [edit, setEdit] = useState<EventInput>(initial);
+  // Extra days to copy this event onto (each becomes its own event).
+  const [copies, setCopies] = useState<string[]>([]);
   const [busy, setBusy] = useState(false);
   const [msg, setMsg] = useState<string | null>(null);
   const kids = data.kids;
   const set = (p: Partial<EventInput>) => setEdit({ ...edit, ...p });
   const family = edit.kid_ids.length === 0;
+  const extra = copies.filter((d) => d !== edit.day);
 
   async function save() {
     if (!edit.title.trim()) return setMsg('Give the event a name.');
     setBusy(true);
-    const err = await saveEvent({ ...edit, title: edit.title.trim(), note: edit.note?.trim() || null });
+    const clean = { ...edit, title: edit.title.trim(), note: edit.note?.trim() || null };
+    let err = await saveEvent(clean);
+    for (const day of extra) {
+      if (err) break;
+      const { id: _id, ...copy } = clean;
+      err = await saveEvent({ ...copy, day });
+    }
     setBusy(false);
     if (err) return setMsg(err);
     onDone();
@@ -117,6 +126,29 @@ export function EventForm({ initial, onDone }: { initial: EventInput; onDone(): 
           </div>
 
           <div className="p-field">
+            <span>{edit.repeat === 'weekly' ? 'Also every week on (optional)' : 'Also on (optional)'}</span>
+            <div className="p-copydays" role="group" aria-label="Copy to other days">
+              {[...weekDays(today(), 0), ...weekDays(today(), 1)].map((d) => {
+                const own = d === edit.day;
+                const past = d < today();
+                const on = own || copies.includes(d);
+                return (
+                  <button
+                    key={d}
+                    aria-pressed={on}
+                    disabled={own || past}
+                    className={own ? 'own' : undefined}
+                    onClick={() => setCopies(on ? copies.filter((x) => x !== d) : [...copies, d])}
+                  >
+                    <span>{DAYS[weekdayOf(d) - 1]}</span>
+                    <b>{Number(d.slice(8))}</b>
+                  </button>
+                );
+              })}
+            </div>
+          </div>
+
+          <div className="p-field">
             <span>Picture</span>
             <div className="p-icons">
               {Object.entries(EVENT_ICONS).map(([k, v]) => (
@@ -132,7 +164,7 @@ export function EventForm({ initial, onDone }: { initial: EventInput; onDone(): 
             <input className="p-input" value={edit.note ?? ''} maxLength={60} onChange={(e) => set({ note: e.target.value })} placeholder="e.g. Pack your goggles" />
           </label>
 
-          <button className="p-btn primary block" onClick={save} disabled={busy}>{edit.id ? 'Save' : 'Add to calendar'}</button>
+          <button className="p-btn primary block" onClick={save} disabled={busy}>{(edit.id ? 'Save' : 'Add to calendar') + (extra.length ? ` + ${extra.length} more ${extra.length === 1 ? 'day' : 'days'}` : '')}</button>
           {edit.id && (
             <button className="p-btn block" onClick={remove} disabled={busy} style={{ color: 'var(--p-red)' }}>Delete event</button>
           )}

@@ -502,6 +502,12 @@ button:disabled { cursor: default; }
   font-family: -apple-system, 'Inter', system-ui, sans-serif;
   display: flex; flex-direction: column;
 }
+.p-copydays { display: grid; grid-template-columns: repeat(7, minmax(0, 1fr)); gap: 6px; }
+.p-copydays button { border: 1.5px solid var(--p-line, #dfe3ea); background: #fff; border-radius: 12px; padding: 6px 0; display: flex; flex-direction: column; align-items: center; gap: 1px; color: var(--p-ink); font-size: 11px; font-weight: 700; }
+.p-copydays button b { font-size: 17px; }
+.p-copydays button[aria-pressed='true'] { background: var(--p-blue); border-color: var(--p-blue); color: #fff; }
+.p-copydays button.own { opacity: 1; background: var(--p-ink); border-color: var(--p-ink); color: #fff; }
+.p-copydays button:disabled:not(.own) { opacity: 0.3; }
 .parent :focus-visible { outline-color: var(--p-blue); }
 .p-main { flex: 1; width: 100%; max-width: 640px; margin: 0 auto; padding: max(20px, env(safe-area-inset-top)) 18px 110px; display: flex; flex-direction: column; gap: 18px; }
 .p-head { display: flex; align-items: center; justify-content: space-between; gap: 10px; }
