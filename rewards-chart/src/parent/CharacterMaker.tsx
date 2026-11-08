@@ -9,7 +9,7 @@ const STYLES = [
   { id: 'armour', label: 'Sci-fi armour' },
   { id: 'space', label: 'Space ranger' },
   { id: 'knight', label: 'Knight' },
-  { id: 'basketball', label: 'Basketball star' },
+  { id: 'basketball', label: 'Basketball (NBA profile)' },
   { id: 'afl', label: 'Aussie Rules (AFL)' },
   { id: 'martial', label: 'Martial arts' },
   { id: 'soccer', label: 'Soccer star' },

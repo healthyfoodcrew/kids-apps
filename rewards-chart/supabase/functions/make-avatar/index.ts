@@ -15,7 +15,8 @@ const CORS = {
 };
 
 // Each style has its own costume, art style, pose and backdrop, so they look properly different.
-type Style = { outfit: string; art: string; scene: string };
+// Optional poses / extras replace the random ones for that style.
+type Style = { outfit: string; art: string; scene: string; poses?: string[]; extras?: string[] };
 const STYLES: Record<string, Style> = {
   hero: {
     outfit: 'a bold action hero in a colourful adventure jacket, fingerless gloves and a utility belt',
@@ -38,9 +39,16 @@ const STYLES: Record<string, Style> = {
     scene: 'a castle courtyard with flags flying and a friendly dragon peeking in the distance',
   },
   basketball: {
-    outfit: 'a basketball star in a bright original team jersey, shorts and high-top sneakers, spinning a basketball on one finger (no real team or brand)',
-    art: 'glossy 3D basketball video game cover art with dramatic arena lighting',
-    scene: 'a basketball court in a packed arena under spotlights, with the hoop and net behind',
+    outfit: 'a pro basketball player in an original team jersey with a big number on the chest, a headband or wristbands, like an official pro-league player profile photo (no real team, league or brand)',
+    art: 'premium pro basketball player profile portrait, like an official media-day headshot, glossy 3D game style with crisp studio lighting and strong rim light',
+    scene: 'a championship celebration blurred behind him in a packed arena: confetti falling, streamers, cheering crowd, bright arena lights and a glowing scoreboard',
+    poses: [
+      'waist-up player profile shot, arms crossed confidently, facing the camera',
+      'waist-up, arms crossed with a basketball tucked under one arm, facing the camera',
+      'chest-up, arms crossed, chin slightly raised like a champion, facing the camera',
+      'waist-up, arms crossed, leaning back slightly with a confident grin, facing the camera',
+    ],
+    extras: ['gold confetti falling around him', 'a championship trophy glowing in the background', 'camera flashes popping in the crowd', 'smoke and spotlights behind him'],
   },
   afl: {
     outfit: 'an Australian Rules football star in a sleeveless guernsey in original colours (no real club), shorts and long socks, holding an oval AFL-style football ready to kick',
@@ -74,7 +82,7 @@ const POSES = [
   'thumbs up, facing the camera',
   'holding his gear proudly, facing the camera',
   'hands on hips like a champion, facing the camera',
-]
+];
 const EXTRAS = [
   'a cool energy glow around the fists',
   'a cool pet sidekick (a small robot or a puppy)',
@@ -102,14 +110,14 @@ function buildPrompt(styleId: string, age: number | null): { prompt: string; sty
     'Most important: keep this exact boy\'s real face so he is instantly recognisable as himself. Match his face shape, eye shape and colour, eyebrows, nose, mouth and smile, ears, skin tone, and any freckles, dimples or missing teeth, plus his real hair colour, length and style. Stylise the clothes, scene and lighting, but only lightly stylise the face; do not change his features or make him look like a different child.',
     `Turn him into an original video-game character: ${st.art}.`,
     `Dress him as ${st.outfit}, with a ${pick(COLOURS)} colour scheme.`,
-    `Pose: ${pick(POSES)}, with ${pick(EXPRESSIONS)}. Add ${pick(EXTRAS)}.`,
+    `Pose: ${pick(st.poses ?? POSES)}, with ${pick(EXPRESSIONS)}. Add ${pick(st.extras ?? EXTRAS)}.`,
     `Background: ${st.scene}.`,
     ageLook(age),
     'Make him look like a real boy: sporty, tough and cool, with his own natural boyish face. No makeup, no lipstick, no eyeliner, no long eyelashes, no glossy or pouty lips, no glitter, no hearts, no flamboyant or overly pretty styling.',
     'Both eyes open, no winking.',
     'Keep the face true to the photo: same person, just in costume.',
     'Square portrait, the character fills most of the frame. Age-appropriate and wholesome.',
-    'No text, no logos, no weapons, and not any existing or copyrighted character.',
+    'No words or logos (a jersey number is fine), no weapons, and not any existing or copyrighted character.',
   ].join(' ');
   return { prompt, style: id };
 }
