@@ -13,6 +13,8 @@ const STYLES = [
   { id: 'afl', label: 'Aussie Rules (AFL)' },
   { id: 'martial', label: 'Martial arts' },
   { id: 'soccer', label: 'Soccer star' },
+  { id: 'army', label: 'Army soldier' },
+  { id: 'swat', label: 'Special forces / SWAT' },
   { id: 'skater', label: 'Skater' },
 ];
 

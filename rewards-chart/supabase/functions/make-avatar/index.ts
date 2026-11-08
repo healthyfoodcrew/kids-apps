@@ -65,6 +65,20 @@ const STYLES: Record<string, Style> = {
     art: 'glossy 3D soccer video game cover art with dramatic stadium lighting',
     scene: 'a green soccer pitch in a huge stadium under floodlights, the goal net behind and fans cheering',
   },
+  army: {
+    outfit: 'an army soldier hero in camouflage fatigues, a combat helmet with goggles pushed up, a tactical vest with pouches and a radio, dog tags and gloves (no guns or weapons)',
+    art: 'gritty but kid-friendly 3D military video game cover art with dramatic lighting',
+    scene: 'a desert or forest base camp with sandbags, a big transport helicopter and a flag waving at sunset',
+    poses: ['waist-up, arms crossed, facing the camera', 'saluting proudly, facing the camera', 'hands on his vest straps, facing the camera', 'thumbs up, facing the camera'],
+    extras: ['dust blowing in the wind', 'a helicopter flying overhead', 'a badge of honour on his chest', 'night-vision goggles on the helmet'],
+  },
+  swat: {
+    outfit: 'an elite special forces / SWAT team member in a black tactical uniform, a tactical helmet with night-vision goggles flipped up, an armoured vest with team patches and a radio earpiece, tactical gloves (no guns or weapons)',
+    art: 'sleek 3D tactical action video game cover art with high-contrast lighting',
+    scene: 'a city rooftop at night with an armoured team truck, searchlights and a helicopter spotlight',
+    poses: ['waist-up, arms crossed, facing the camera', 'chest-up, steely confident look, facing the camera', 'hands on his vest straps, facing the camera', 'walking towards the camera like a team leader'],
+    extras: ['red and blue lights glowing behind him', 'a helicopter spotlight beam', 'rain and city lights', 'his squad in silhouette behind him'],
+  },
   skater: {
     outfit: 'a cool skateboarder in a hoodie, cap and sneakers holding a skateboard',
     art: 'street-art cartoon style with graffiti colours and thick outlines',
