@@ -1,3 +1,4 @@
+import { useState } from 'react';
 import { Icon, UI_ICONS } from '../components/Icon';
 import type { KidSummary } from '../lib/calc';
 import { banEndText, localParts } from '../lib/time';
@@ -29,12 +30,13 @@ export function TechCard({
   s: KidSummary;
   settings: Settings;
   busy: boolean;
-  onStart(): void;
+  onStart(seconds: number): void;
   onStop(): void;
   onAsk(): void;
 }) {
   const t = s.tech;
   const mins = Math.floor(t.remainingSeconds / 60);
+  const [picking, setPicking] = useState(false);
   const log = (
     <div className="log">
       {t.earned > 0 && <span className="plus">+{t.earned} min from bonus jobs</span>}
@@ -85,8 +87,8 @@ export function TechCard({
           <span className="title">TECH TIME</span>
           <span className="status"><span className="live-dot" />ON NOW</span>
         </div>
-        <div className="countdown" role="timer" aria-label={`${mins} minutes left this week`}>{clock(t.remainingSeconds)}</div>
-        <div className="note">left this week</div>
+        <div className="countdown" role="timer" aria-label={`${Math.ceil(t.sessionLeft / 60)} minutes left of this go`}>{clock(t.sessionLeft)}</div>
+        <div className="note">{mins} min left this week</div>
         <button className="t-btn pause" onClick={onStop} disabled={busy}><Icon d={PAUSE} size={22} filled />PAUSE</button>
       </section>
     );
@@ -134,10 +136,49 @@ export function TechCard({
           <span className="live-dot" />WAITING FOR A YES…
         </button>
       ) : (
-        <button className={`t-btn ${paused ? 'resume' : 'start'}`} onClick={onStart} disabled={busy}>
-          <Icon d={PLAY} size={22} filled />{paused ? 'RESUME' : 'START'}
+        <button className={`t-btn ${paused ? 'resume' : 'start'}`} onClick={() => setPicking(true)} disabled={busy}>
+          <Icon d={PLAY} size={22} filled />{paused ? 'PLAY MORE' : 'START'}
         </button>
       )}
+      {picking && (
+        <TimePicker
+          maxSeconds={t.remainingSeconds}
+          onPick={(secs) => {
+            setPicking(false);
+            onStart(secs);
+          }}
+          onClose={() => setPicking(false)}
+        />
+      )}
     </section>
+  );
+}
+
+const CHOICES = [10, 15, 20, 30, 45, 60, 90, 120];
+
+/** "How long do you want to play?": any amount up to what's left this week. */
+function TimePicker({ maxSeconds, onPick, onClose }: { maxSeconds: number; onPick(seconds: number): void; onClose(): void }) {
+  const maxMins = Math.floor(maxSeconds / 60);
+  const options = CHOICES.filter((m) => m < maxMins);
+  return (
+    <div className="tp-overlay" role="dialog" aria-label="How long do you want to play?" onClick={onClose}>
+      <div className="tp-card" onClick={(e) => e.stopPropagation()}>
+        <h3>HOW LONG DO YOU WANT TO PLAY?</h3>
+        <p className="tp-sub">You have {maxMins >= 60 ? `${Math.floor(maxMins / 60)} hr ${maxMins % 60 ? `${maxMins % 60} min` : ''}` : `${maxMins} min`} left this week</p>
+        <div className="tp-grid">
+          {options.map((m) => (
+            <button key={m} className="tp-opt" onClick={() => onPick(m * 60)}>
+              <b>{m >= 60 && m % 60 === 0 ? m / 60 : m}</b>
+              <span>{m >= 60 && m % 60 === 0 ? (m === 60 ? 'HOUR' : 'HOURS') : 'MIN'}</span>
+            </button>
+          ))}
+          <button className="tp-opt all" onClick={() => onPick(maxSeconds)}>
+            <b>ALL</b>
+            <span>{maxMins} MIN</span>
+          </button>
+        </div>
+        <button className="tp-cancel" onClick={onClose}>NOT NOW</button>
+      </div>
+    </div>
   );
 }

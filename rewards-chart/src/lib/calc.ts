@@ -30,6 +30,7 @@ export interface TechState {
   usedSeconds: number; // timer time used this week
   remainingSeconds: number; // what's left this week (0 while banned)
   running: TechSession | null; // the timer that's counting down right now
+  sessionLeft: number; // seconds left of the time they chose for this go (0 when not running)
   sessionIds: string[]; // this week's timer sessions (parents can reset them)
   approval: 'none' | 'requested' | 'approved'; // weekends: a parent has to say yes each day
 }
@@ -328,6 +329,7 @@ export function summarizeKid(kid: Kid, data: FamilyData, now: Date): KidSummary 
     usedSeconds,
     remainingSeconds: ban ? 0 : Math.max(0, allowance * 60 - usedSeconds),
     running: ban ? null : open,
+    sessionLeft: !ban && open ? Math.max(0, open.allowed_seconds - sessionSeconds(open, now)) : 0,
     sessionIds: weekSessions.map((t) => t.id),
     approval: (data.techApprovals ?? []).find((a) => a.kid_id === kid.id && a.day === today)?.status ?? 'none',
   };

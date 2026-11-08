@@ -198,7 +198,7 @@ export function KidScreen() {
           s={s}
           settings={data.settings}
           busy={busy === 'tech'}
-          onStart={() => techAction(() => startTech(kid.id, s.tech.remainingSeconds))}
+          onStart={(secs) => techAction(() => startTech(kid.id, Math.min(secs, s.tech.remainingSeconds)))}
           onStop={() => techAction(() => stopTech(kid.id))}
           onAsk={() => techAction(() => requestTech(kid.id))}
         />

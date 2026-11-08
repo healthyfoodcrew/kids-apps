@@ -250,4 +250,19 @@ describe('weekend tech timer', () => {
     expect(s.tech.remainingSeconds).toBe(210 * 60 - 600);
     expect(summarizeKid(kid, data({}), wedMorning).tech.weekend).toBe(false);
   });
+  it('counts down the time they chose, and the rest carries over', () => {
+    // Picked 30 min at 9:50am; it's 10am, so 20 min left of this go.
+    const techSessions = [{ id: 's1', kid_id: 'k1', started_at: '2025-11-14T22:50:00Z', allowed_seconds: 30 * 60, ended_at: null }];
+    const s = summarizeKid(kid, data({ techSessions }), sat);
+    expect(s.tech.sessionLeft).toBe(20 * 60);
+    expect(s.tech.remainingSeconds).toBe(200 * 60);
+    // Next day (Sunday) the session is over and what's left of the week is still there.
+    const sun = summarizeKid(kid, data({ techSessions }), new Date('2025-11-15T23:00:00Z'));
+    expect(sun.tech.running).toBeNull();
+    expect(sun.tech.sessionLeft).toBe(0);
+    expect(sun.tech.remainingSeconds).toBe(180 * 60);
+    // Monday: a fresh week, back to the full allowance.
+    const mon = summarizeKid(kid, data({ techSessions }), new Date('2025-11-16T23:00:00Z'));
+    expect(mon.tech.remainingSeconds).toBe(210 * 60);
+  });
 });
