@@ -426,14 +426,15 @@ button:disabled { cursor: default; }
 
 /* Family week calendar */
 .week-cal { width: 100%; max-width: 1000px; border: 2px solid var(--edge); padding: 16px 16px 14px; }
-.wc-head { display: flex; align-items: center; gap: 14px; margin-bottom: 12px; flex-wrap: wrap; }
-.wc-title { display: flex; align-items: baseline; gap: 10px; margin-right: auto; }
+.wc-head { display: flex; align-items: center; gap: 12px; margin-bottom: 12px; flex-wrap: nowrap; }
+.wc-title { display: flex; align-items: baseline; gap: 10px; margin-right: auto; min-width: 0; white-space: nowrap; }
 .wc-title h2 { font-size: 26px; letter-spacing: 0.04em; }
 .wc-range { font-size: 14px; font-weight: 800; color: var(--muted); }
-.wc-legend { display: flex; gap: 12px; font-size: 12px; font-weight: 800; color: var(--muted); }
+.wc-legend { display: flex; flex-shrink: 1; min-width: 0; white-space: nowrap; gap: 12px; font-size: 12px; font-weight: 800; color: var(--muted); }
 .wc-legend span { display: inline-flex; align-items: center; gap: 5px; }
 .wc-legend i { width: 10px; height: 10px; border-radius: 99px; }
-.wc-nav { display: flex; gap: 8px; }
+.wc-nav { display: flex; gap: 8px; flex-shrink: 0; }
+@media (max-width: 700px) { .wc-legend { display: none; } }
 .wc-nav button { width: 44px; height: 44px; border-radius: 12px; border: 0; background: var(--panel-2); color: #fff; display: grid; place-items: center; }
 .wc-nav button:disabled { opacity: 0.35; }
 .wc-add { height: 44px; padding: 0 14px; border-radius: 12px; background: var(--gold); color: var(--ink); font-family: var(--display); font-size: 18px; letter-spacing: 0.04em; display: inline-flex; align-items: center; gap: 6px; text-decoration: none; box-shadow: 0 4px 0 var(--gold-shadow); }
@@ -445,10 +446,10 @@ button:disabled { cursor: default; }
 .wc-date .dn { font-size: 12px; font-weight: 900; letter-spacing: 0.08em; opacity: 0.85; }
 .wc-date .dd { font-family: var(--display); font-size: 28px; }
 .wc-events { display: flex; flex-direction: column; gap: 6px; }
-.wc-ev { border: 0; text-align: left; background: rgba(255, 255, 255, 0.07); border-left: 4px solid var(--ev); border-radius: 10px; padding: 6px 6px 7px; color: inherit; font: inherit; display: flex; flex-direction: column; gap: 3px; }
+.wc-ev { border: 0; text-align: left; min-width: 0; background: rgba(255, 255, 255, 0.07); border-left: 4px solid var(--ev); border-radius: 10px; padding: 6px 6px 7px; color: inherit; font: inherit; display: flex; flex-direction: column; gap: 3px; }
 .wc-day.today .wc-ev { background: rgba(58, 38, 0, 0.12); }
 .wc-ev .ev-top { display: flex; align-items: center; gap: 4px; font-size: 11px; font-weight: 900; }
-.wc-ev .ev-title { font-size: 13px; font-weight: 800; line-height: 1.15; overflow-wrap: anywhere; display: -webkit-box; -webkit-line-clamp: 2; -webkit-box-orient: vertical; overflow: hidden; }
+.wc-ev .ev-title { font-size: clamp(11px, 1.55vw, 13px); font-weight: 800; line-height: 1.15; overflow-wrap: break-word; hyphens: auto; display: -webkit-box; -webkit-line-clamp: 2; -webkit-box-orient: vertical; overflow: hidden; }
 .wc-more { border: 0; border-radius: 10px; padding: 7px 4px; background: rgba(255, 255, 255, 0.14); color: inherit; font: inherit; font-size: 12px; font-weight: 900; letter-spacing: 0.04em; }
 .wc-day.today .wc-more { background: rgba(58, 38, 0, 0.16); }
 .wc-pop-card .pop-list { width: 100%; display: flex; flex-direction: column; gap: 8px; margin-top: 6px; }

@@ -36,7 +36,8 @@ export function WeekCalendar({ events, kids, today }: { events: CalEvent[]; kids
   const first = days[0];
   const last = days[6];
   const range = `${Number(first.slice(8))} ${MONTHS[Number(first.slice(5, 7)) - 1]} – ${Number(last.slice(8))} ${MONTHS[Number(last.slice(5, 7)) - 1]}`;
-  const title = offset === 0 ? 'THIS WEEK' : offset === 1 ? 'NEXT WEEK' : offset === -1 ? 'LAST WEEK' : range.toUpperCase();
+  // Keep the title short so the header always stays on one line.
+  const title = offset === 0 ? 'THIS WEEK' : offset === 1 ? 'NEXT WEEK' : offset === -1 ? 'LAST WEEK' : `IN ${offset} WEEKS`;
 
   return (
     <section className="panel week-cal" aria-label="Family calendar">
