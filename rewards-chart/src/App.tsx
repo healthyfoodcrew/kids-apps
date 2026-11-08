@@ -6,7 +6,7 @@ import { PlayerPick } from './kid/PlayerPick';
 import { useAuth, useCanManage } from './lib/store';
 import { supabase } from './lib/supabase';
 import { Adjust } from './parent/Adjust';
-import { Calendar } from './parent/Calendar';
+import { AddEventPage, Calendar } from './parent/Calendar';
 import { ParentHome } from './parent/Home';
 import { Jobs } from './parent/Jobs';
 import { Payday } from './parent/Payday';
@@ -115,6 +115,7 @@ export function App() {
         <Route path="/" element={role === 'parent' ? <Navigate to="/parent" replace /> : <PlayerPick />} />
         <Route path="/kids" element={<PlayerPick />} />
         <Route path="/kid/:kidId" element={<KidScreen />} />
+        <Route path="/add-event" element={<AddEventPage />} />
         <Route path="/parent/*" element={<ParentGate />} />
         <Route path="*" element={<Navigate to="/" replace />} />
       </Routes>

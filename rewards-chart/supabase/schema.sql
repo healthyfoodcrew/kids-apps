@@ -488,3 +488,28 @@ grant execute on function public.request_tech(uuid) to authenticated;
 do $$ begin
   alter publication supabase_realtime add table public.tech_approvals;
 exception when duplicate_object then null; end $$;
+
+-- ───────────── Family calendar ─────────────
+create table if not exists public.events (
+  id uuid primary key default gen_random_uuid(),
+  title text not null check (length(title) between 1 and 60),
+  icon text not null default 'star',
+  kid_ids uuid[] not null default '{}',          -- empty = whole family
+  day date not null,                             -- first (or only) day
+  start_time time,                               -- null = all day
+  repeat text not null default 'none' check (repeat in ('none', 'weekly')),
+  note text check (note is null or length(note) <= 80),
+  created_at timestamptz not null default now()
+);
+create index if not exists events_day_idx on public.events (day);
+alter table public.events enable row level security;
+drop policy if exists "members read" on public.events;
+create policy "members read" on public.events for select using (public.is_member());
+-- Anyone in the family (including the kids' iPad) can add; only parents edit or delete.
+drop policy if exists "members add" on public.events;
+create policy "members add" on public.events for insert with check (public.is_member());
+drop policy if exists "parents write" on public.events;
+create policy "parents write" on public.events for all using (public.can_manage()) with check (public.can_manage());
+do $$ begin
+  alter publication supabase_realtime add table public.events;
+exception when duplicate_object then null; end $$;

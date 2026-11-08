@@ -8,6 +8,7 @@ import type { CalEvent, Kid } from '../lib/types';
 
 export const FAMILY_COLOR = '#FFC94A';
 const DAY_NAMES = ['MON', 'TUE', 'WED', 'THU', 'FRI', 'SAT', 'SUN'];
+const MAX_SHOWN = 3;
 const MONTHS = ['Jan', 'Feb', 'Mar', 'Apr', 'May', 'Jun', 'Jul', 'Aug', 'Sep', 'Oct', 'Nov', 'Dec'];
 
 /** Colour of an event: the child's colour if it's just for one of them, gold for the family. */
@@ -30,6 +31,7 @@ function shortTime(t: string | null): string {
 export function WeekCalendar({ events, kids, today }: { events: CalEvent[]; kids: Kid[]; today: string }) {
   const [offset, setOffset] = useState(0);
   const [open, setOpen] = useState<{ e: CalEvent; day: string } | null>(null);
+  const [openDay, setOpenDay] = useState<string | null>(null);
   const days = weekDays(today, offset);
   const first = days[0];
   const last = days[6];
@@ -56,7 +58,7 @@ export function WeekCalendar({ events, kids, today }: { events: CalEvent[]; kids
           <button onClick={() => setOffset((o) => Math.min(8, o + 1))} disabled={offset >= 8} aria-label="Next week">
             <Icon d="M9 5l7 7-7 7" size={20} strokeWidth={2.6} />
           </button>
-          <Link to="/parent/calendar?new=1" className="wc-add" aria-label="Add an event (parents)">
+          <Link to="/add-event" className="wc-add" aria-label="Add an event">
             <Icon d={UI_ICONS.plus} size={18} strokeWidth={3} />ADD
           </Link>
         </div>
@@ -73,7 +75,7 @@ export function WeekCalendar({ events, kids, today }: { events: CalEvent[]; kids
                 <span className="dd">{Number(d.slice(8))}</span>
               </div>
               <div className="wc-events">
-                {evs.map((e) => {
+                {evs.slice(0, evs.length > MAX_SHOWN ? MAX_SHOWN - 1 : MAX_SHOWN).map((e) => {
                   const c = eventColor(e, kids);
                   return (
                     <button key={e.id} className="wc-ev" style={{ '--ev': c } as CSSProperties} onClick={() => setOpen({ e, day: d })}>
@@ -85,11 +87,37 @@ export function WeekCalendar({ events, kids, today }: { events: CalEvent[]; kids
                     </button>
                   );
                 })}
+                {evs.length > MAX_SHOWN && (
+                  <button className="wc-more" onClick={() => setOpenDay(d)}>+{evs.length - (MAX_SHOWN - 1)} MORE</button>
+                )}
               </div>
             </div>
           );
         })}
       </div>
+
+      {openDay && (
+        <div className="wc-pop" role="dialog" aria-label="Everything on this day" onClick={() => setOpenDay(null)}>
+          <div className="wc-pop-card" style={{ '--ev': FAMILY_COLOR } as CSSProperties} onClick={(ev) => ev.stopPropagation()}>
+            <h3>{DAY_NAMES[days.indexOf(openDay)]} {Number(openDay.slice(8))} {MONTHS[Number(openDay.slice(5, 7)) - 1]}</h3>
+            <div className="pop-list">
+              {eventsOn(events, openDay).map((e) => {
+                const c = eventColor(e, kids);
+                return (
+                  <button key={e.id} className="pop-row" style={{ '--ev': c } as CSSProperties} onClick={() => { setOpenDay(null); setOpen({ e, day: openDay }); }}>
+                    <span className="pop-row-icon"><EventIcon name={e.icon} size={24} color="#1d1a52" /></span>
+                    <span className="pop-row-text">
+                      <b>{e.title}</b>
+                      <span>{e.start_time ? formatClock(e.start_time) : 'All day'} · {eventWho(e, kids)}</span>
+                    </span>
+                  </button>
+                );
+              })}
+            </div>
+            <button className="pop-close" onClick={() => setOpenDay(null)}>OK!</button>
+          </div>
+        </div>
+      )}
 
       {open && (
         <div className="wc-pop" role="dialog" aria-label={open.e.title} onClick={() => setOpen(null)}>

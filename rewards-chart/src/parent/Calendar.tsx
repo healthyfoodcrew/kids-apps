@@ -1,10 +1,10 @@
 import { useState } from 'react';
-import { useNavigate, useSearchParams } from 'react-router-dom';
+import { useNavigate } from 'react-router-dom';
 import { EVENT_ICONS, EventIcon } from '../components/EventIcon';
 import { Icon, UI_ICONS } from '../components/Icon';
 import { eventColor, eventWho } from '../kid/WeekCalendar';
 import { nextDate } from '../lib/calc';
-import { useAuth, useFamily, type EventInput } from '../lib/store';
+import { useFamily, type EventInput } from '../lib/store';
 import { formatClock, weekdayOf } from '../lib/time';
 import type { CalEvent } from '../lib/types';
 import { KidDot, ParentLayout, inkOf } from './ParentLayout';
@@ -20,59 +20,38 @@ function blank(today: string): EventInput {
   return { title: '', icon: 'star', kid_ids: [], day: today, start_time: null, repeat: 'none', note: null };
 }
 
-export function Calendar() {
-  const { data, today, saveEvent, deleteEvent } = useFamily();
-  const { role, lock } = useAuth();
-  const navigate = useNavigate();
-  const [params] = useSearchParams();
-  const fromTablet = role === 'tablet' && params.get('new') === '1';
-  const [edit, setEdit] = useState<EventInput | null>(() => (params.get('new') === '1' ? blank(today()) : null));
+/** The add / edit event form. Used on the parents' Calendar tab and on the kids' iPad (adding only). */
+export function EventForm({ initial, onDone }: { initial: EventInput; onDone(): void }) {
+  const { data, saveEvent, deleteEvent } = useFamily();
+  const [edit, setEdit] = useState<EventInput>(initial);
   const [busy, setBusy] = useState(false);
   const [msg, setMsg] = useState<string | null>(null);
-  const t = today();
   const kids = data.kids;
-
-  const upcoming = (data.events ?? [])
-    .map((e) => ({ e, next: nextDate(e, t) }))
-    .filter((x): x is { e: CalEvent; next: string } => x.next !== null)
-    .sort((a, b) => a.next.localeCompare(b.next) || (a.e.start_time ?? '').localeCompare(b.e.start_time ?? ''));
-
-  function close() {
-    setEdit(null);
-    setMsg(null);
-    // Added from the kids' iPad: lock parent mode again and go straight back to the home screen.
-    if (fromTablet) {
-      void lock();
-      navigate('/');
-    }
-  }
+  const set = (p: Partial<EventInput>) => setEdit({ ...edit, ...p });
+  const family = edit.kid_ids.length === 0;
 
   async function save() {
-    if (!edit) return;
     if (!edit.title.trim()) return setMsg('Give the event a name.');
     setBusy(true);
     const err = await saveEvent({ ...edit, title: edit.title.trim(), note: edit.note?.trim() || null });
     setBusy(false);
     if (err) return setMsg(err);
-    close();
+    onDone();
   }
 
   async function remove() {
-    if (!edit?.id || !window.confirm(`Delete "${edit.title}"?`)) return;
+    if (!edit.id || !window.confirm(`Delete "${edit.title}"?`)) return;
     setBusy(true);
     const err = await deleteEvent(edit.id);
     setBusy(false);
     if (err) return setMsg(err);
-    close();
+    onDone();
   }
 
-  if (edit) {
-    const set = (p: Partial<EventInput>) => setEdit({ ...edit, ...p });
-    const family = edit.kid_ids.length === 0;
-    return (
-      <ParentLayout>
+  return (
+    <>
         <header className="p-head">
-          <button className="p-icon-btn" onClick={close} aria-label="Back"><Icon d={UI_ICONS.back} size={20} /></button>
+          <button className="p-icon-btn" onClick={onDone} aria-label="Back"><Icon d={UI_ICONS.back} size={20} /></button>
           <h1 style={{ flex: 1, fontSize: 22 }}>{edit.id ? 'Edit event' : 'New event'}</h1>
         </header>
         {msg && <div className="p-msg err" role="alert">{msg}</div>}
@@ -158,6 +137,38 @@ export function Calendar() {
             <button className="p-btn block" onClick={remove} disabled={busy} style={{ color: 'var(--p-red)' }}>Delete event</button>
           )}
         </div>
+    </>
+  );
+}
+
+/** Adding an event straight from the kids' iPad (no PIN needed). */
+export function AddEventPage() {
+  const { today } = useFamily();
+  const navigate = useNavigate();
+  return (
+    <div className="parent">
+      <div className="p-main">
+        <EventForm initial={blank(today())} onDone={() => navigate('/')} />
+      </div>
+    </div>
+  );
+}
+
+export function Calendar() {
+  const { data, today } = useFamily();
+  const [edit, setEdit] = useState<EventInput | null>(null);
+  const t = today();
+  const kids = data.kids;
+
+  const upcoming = (data.events ?? [])
+    .map((e) => ({ e, next: nextDate(e, t) }))
+    .filter((x): x is { e: CalEvent; next: string } => x.next !== null)
+    .sort((a, b) => a.next.localeCompare(b.next) || (a.e.start_time ?? '').localeCompare(b.e.start_time ?? ''));
+
+  if (edit) {
+    return (
+      <ParentLayout>
+        <EventForm key={edit.id ?? 'new'} initial={edit} onDone={() => setEdit(null)} />
       </ParentLayout>
     );
   }
@@ -170,7 +181,6 @@ export function Calendar() {
           <span style={{ display: 'inline-flex', alignItems: 'center', gap: 6 }}><Icon d={UI_ICONS.plus} size={18} strokeWidth={2.6} />Add</span>
         </button>
       </header>
-      {msg && <div className="p-msg err" role="alert">{msg}</div>}
       {upcoming.length === 0 ? (
         <div className="p-card p-empty">Nothing coming up. Tap Add to put something on the iPad calendar.</div>
       ) : (
