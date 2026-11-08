@@ -131,6 +131,7 @@ const EMPTY: FamilyData = {
   adjustments: [],
   payouts: [],
   techSessions: [],
+  techApprovals: [],
 };
 
 export interface JobInput {
@@ -176,6 +177,9 @@ export interface FamilyState {
   startTech(kidId: string, seconds: number): Promise<string | null>;
   stopTech(kidId: string): Promise<string | null>;
   resetTech(kidId: string, sessionIds: string[]): Promise<string | null>;
+  requestTech(kidId: string): Promise<string | null>;
+  approveTech(kidId: string): Promise<string | null>;
+  revokeTech(kidId: string): Promise<string | null>;
   makeAvatar(kidId: string, photo: string, style: string): Promise<{ path?: string; url?: string | null; error?: string }>;
 }
 
@@ -185,6 +189,7 @@ function friendly(message: string): string {
   if (message.includes('Weekly limit')) return 'That job is all done for this week!';
   if (message.includes('row-level security')) return 'Only a parent can do that.';
   if (message.includes('duplicate key')) return 'Already done!';
+  if (message.includes('needs a parent to approve')) return 'Ask Mum or Dad to say yes first!';
   if (message.includes('weekends only')) return 'Tech time is for weekends only!';
   if (message.includes('not assigned to this child')) return "That job isn't yours today.";
   if (message.includes('Failed to send a request')) return 'Could not reach the server. Check the internet and try again.';
@@ -203,7 +208,7 @@ export function FamilyProvider({ children }: { children: ReactNode }) {
   const refresh = useCallback(async () => {
     if (!supabase || !session || !role) return;
     const since = addDays(today(), -120);
-    const [settings, kids, jobs, completions, bonusLogs, adjustments, payouts, techSessions] = await Promise.all([
+    const [settings, kids, jobs, completions, bonusLogs, adjustments, payouts, techSessions, techApprovals] = await Promise.all([
       supabase.from('settings').select('*').eq('id', 1).maybeSingle(),
       supabase.from('kids').select('*').order('sort'),
       supabase.from('jobs').select('*').order('sort'),
@@ -212,8 +217,9 @@ export function FamilyProvider({ children }: { children: ReactNode }) {
       supabase.from('adjustments').select('*').gte('day', since).order('created_at', { ascending: false }),
       supabase.from('payouts').select('*').gte('week_start', since),
       supabase.from('tech_sessions').select('*').gte('started_at', `${addDays(today(), -14)}T00:00:00Z`),
+      supabase.from('tech_approvals').select('*').gte('day', addDays(today(), -7)),
     ]);
-    const firstError = [settings, kids, jobs, completions, bonusLogs, adjustments, payouts, techSessions].find((r) => r.error)?.error;
+    const firstError = [settings, kids, jobs, completions, bonusLogs, adjustments, payouts, techSessions, techApprovals].find((r) => r.error)?.error;
     if (firstError) {
       setError(firstError.message);
       setLoading(false);
@@ -230,6 +236,7 @@ export function FamilyProvider({ children }: { children: ReactNode }) {
       adjustments: (adjustments.data ?? []).map((a) => ({ ...a, amount: Number(a.amount) })),
       payouts: (payouts.data ?? []).map((p) => ({ ...p, amount: Number(p.amount) })),
       techSessions: techSessions.data ?? [],
+      techApprovals: techApprovals.data ?? [],
     } as FamilyData);
     setError(null);
     setLoading(false);
@@ -245,7 +252,7 @@ export function FamilyProvider({ children }: { children: ReactNode }) {
       pending = window.setTimeout(() => void refresh(), 250);
     };
     const channel = supabase.channel('family');
-    for (const table of ['settings', 'kids', 'jobs', 'completions', 'bonus_logs', 'adjustments', 'payouts', 'tech_sessions']) {
+    for (const table of ['settings', 'kids', 'jobs', 'completions', 'bonus_logs', 'adjustments', 'payouts', 'tech_sessions', 'tech_approvals']) {
       channel.on('postgres_changes', { event: '*', schema: 'public', table }, soon);
     }
     channel.subscribe();
@@ -337,6 +344,20 @@ export function FamilyProvider({ children }: { children: ReactNode }) {
           if (stop.error) return stop;
           if (sessionIds.length === 0) return { error: null };
           return db.from('tech_sessions').delete().in('id', sessionIds);
+        }),
+      requestTech: (kidId) => run(() => db.rpc('request_tech', { p_kid: kidId })),
+      approveTech: (kidId) =>
+        run(() =>
+          db.from('tech_approvals').upsert(
+            { kid_id: kidId, day: today(), status: 'approved', approved_at: new Date().toISOString() },
+            { onConflict: 'kid_id,day' },
+          ),
+        ),
+      revokeTech: (kidId) =>
+        run(async () => {
+          const stop = await db.rpc('stop_tech', { p_kid: kidId });
+          if (stop.error) return stop;
+          return db.from('tech_approvals').delete().eq('kid_id', kidId).eq('day', today());
         }),
       makeAvatar: async (kidId, photo, style) => {
         const { data: res, error: e } = await db.functions.invoke('make-avatar', { body: { kid_id: kidId, image: photo, style } });

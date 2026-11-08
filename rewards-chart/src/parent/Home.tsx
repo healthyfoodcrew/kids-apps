@@ -12,7 +12,7 @@ function when(iso: string): string {
 
 /** "Today": what needs a parent right now, and how each child is tracking. */
 export function ParentHome() {
-  const { data, loading, error, reviewBonus, stopTech, resetTech } = useFamily();
+  const { data, loading, error, reviewBonus, stopTech, resetTech, approveTech, revokeTech } = useFamily();
   const now = useNow(30_000);
   const [busy, setBusy] = useState<string | null>(null);
   const [msg, setMsg] = useState<string | null>(null);
@@ -25,6 +25,15 @@ export function ParentHome() {
   const owing = data.kids.flatMap((k) => payHistory(k, data, now, 8).filter((w) => w.status === 'due' || w.status === 'missed'));
   const owedTotal = owing.reduce((a, w) => a + w.amount, 0);
   const missed = owing.filter((w) => w.status === 'missed').length;
+
+  const techAsks = summaries.filter((s) => s.tech.weekend && !s.tech.ban && s.tech.approval === 'requested');
+
+  async function act(key: string, op: () => Promise<string | null>) {
+    setBusy(key);
+    const e = await op();
+    setBusy(null);
+    setMsg(e);
+  }
 
   async function review(id: string, status: 'approved' | 'rejected') {
     setBusy(id);
@@ -51,6 +60,26 @@ export function ParentHome() {
           </span>
           <span style={{ fontWeight: 800 }}>Tick off ›</span>
         </Link>
+      )}
+
+      {techAsks.length > 0 && (
+        <section className="p-section">
+          <h2>Tech time requests ({techAsks.length})</h2>
+          <div className="p-list">
+            {techAsks.map((s) => (
+              <div key={s.kid.id} className="p-row">
+                <KidDot name={s.kid.name} color={inkOf(s.kid.color)} />
+                <div className="grow">
+                  <div className="t">{s.kid.name} wants tech time</div>
+                  <div className="m">{Math.floor(s.tech.remainingSeconds / 60)} min left this week · morning jobs done</div>
+                </div>
+                <button className="p-btn primary" disabled={busy === `ok-${s.kid.id}`} onClick={() => act(`ok-${s.kid.id}`, () => approveTech(s.kid.id))}>
+                  Say yes
+                </button>
+              </div>
+            ))}
+          </div>
+        </section>
       )}
 
       {pending.length > 0 && (
@@ -113,7 +142,7 @@ export function ParentHome() {
               ? 'Tech time dead'
               : t.running
                 ? `On now · ${Math.floor(t.remainingSeconds / 3600)}h ${String(Math.floor((t.remainingSeconds % 3600) / 60)).padStart(2, '0')}m left`
-                : `${left} min left this week${t.weekend ? '' : ' · weekends only'}`;
+                : `${left} min left this week${!t.weekend ? ' · weekends only' : t.approval === 'approved' ? ' · allowed today' : t.approval === 'requested' ? ' · asking now' : ' · not allowed yet today'}`;
             return (
               <div key={s.kid.id} className="p-row" style={{ flexWrap: 'wrap' }}>
                 <KidDot name={s.kid.name} color={inkOf(s.kid.color)} />
@@ -125,6 +154,17 @@ export function ParentHome() {
                   <button className="p-btn" disabled={busy === `stop-${s.kid.id}`} onClick={async () => { setBusy(`stop-${s.kid.id}`); const e = await stopTech(s.kid.id); setBusy(null); setMsg(e); }}>
                     Stop
                   </button>
+                )}
+                {t.weekend && !t.ban && (
+                  t.approval === 'approved' ? (
+                    <button className="p-btn" disabled={busy === `lock-${s.kid.id}`} onClick={() => act(`lock-${s.kid.id}`, () => revokeTech(s.kid.id))}>
+                      Lock
+                    </button>
+                  ) : (
+                    <button className="p-btn primary" disabled={busy === `ok-${s.kid.id}`} onClick={() => act(`ok-${s.kid.id}`, () => approveTech(s.kid.id))}>
+                      Allow today
+                    </button>
+                  )
                 )}
                 <button
                   className="p-btn"
@@ -145,7 +185,7 @@ export function ParentHome() {
         </div>
       </section>
 
-      {pending.length === 0 && owing.length === 0 && !loading && (
+      {pending.length === 0 && owing.length === 0 && techAsks.length === 0 && !loading && (
         <div className="p-card p-empty">All caught up. Nothing needs you right now.</div>
       )}
     </ParentLayout>

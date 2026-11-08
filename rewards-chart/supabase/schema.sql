@@ -418,14 +418,20 @@ declare
   s public.settings;
   k public.kids;
   dow int;
+  today date;
 begin
   if not public.is_member() then raise exception 'Not allowed'; end if;
   select * into s from public.settings where id = 1;
   select * into k from public.kids where id = p_kid;
   if not found then raise exception 'Child not found'; end if;
-  dow := extract(isodow from (now() at time zone coalesce(s.timezone, 'Australia/Melbourne')))::int;
+  today := (now() at time zone coalesce(s.timezone, 'Australia/Melbourne'))::date;
+  dow := extract(isodow from today)::int;
   if dow = any (coalesce(s.school_days, '{1,2,3,4,5}')) then raise exception 'Tech time is for weekends only'; end if;
   if k.tech_banned and (k.tech_ban_until is null or k.tech_ban_until > now()) then raise exception 'Tech time is banned'; end if;
+  -- A parent says yes each day (table tech_approvals, further down).
+  if not exists (select 1 from public.tech_approvals where kid_id = p_kid and day = today and status = 'approved') then
+    raise exception 'Tech time needs a parent to approve it';
+  end if;
   if p_seconds is null or p_seconds <= 0 then raise exception 'No tech time left'; end if;
   update public.tech_sessions set ended_at = started_at + make_interval(secs => allowed_seconds)
     where kid_id = p_kid and ended_at is null and started_at + make_interval(secs => allowed_seconds) <= now();
@@ -450,3 +456,35 @@ grant execute on function public.stop_tech(uuid) to authenticated;
 do $$ begin
   alter publication supabase_realtime add table public.tech_sessions;
 exception when duplicate_object or undefined_object then null; end $$;
+
+
+-- ───────────── Weekend tech time needs a parent's yes each day ─────────────
+create table if not exists public.tech_approvals (
+  kid_id uuid not null references public.kids on delete cascade,
+  day date not null,
+  status text not null check (status in ('requested', 'approved')),
+  requested_at timestamptz,
+  approved_at timestamptz,
+  primary key (kid_id, day)
+);
+alter table public.tech_approvals enable row level security;
+drop policy if exists "members read" on public.tech_approvals;
+create policy "members read" on public.tech_approvals for select using (public.is_member());
+drop policy if exists "parents write" on public.tech_approvals;
+create policy "parents write" on public.tech_approvals for all using (public.can_manage()) with check (public.can_manage());
+
+create or replace function public.request_tech(p_kid uuid) returns void
+language plpgsql security definer set search_path = public as $$
+declare tz text;
+begin
+  if not public.is_member() then raise exception 'Not allowed'; end if;
+  select timezone into tz from public.settings where id = 1;
+  insert into public.tech_approvals (kid_id, day, status, requested_at)
+  values (p_kid, (now() at time zone coalesce(tz, 'Australia/Melbourne'))::date, 'requested', now())
+  on conflict (kid_id, day) do nothing;
+end $$;
+revoke execute on function public.request_tech(uuid) from anon, public;
+grant execute on function public.request_tech(uuid) to authenticated;
+do $$ begin
+  alter publication supabase_realtime add table public.tech_approvals;
+exception when duplicate_object then null; end $$;

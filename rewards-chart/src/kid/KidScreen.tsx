@@ -12,7 +12,7 @@ import { TechCard } from './TechCard';
 
 export function KidScreen() {
   const { kidId } = useParams();
-  const { data, loading, toggleJob, logBonus, undoBonus, startTech, stopTech } = useFamily();
+  const { data, loading, toggleJob, logBonus, undoBonus, startTech, stopTech, requestTech } = useFamily();
   const now = useNow(1000);
   const [toast, setToast] = useState<string | null>(null);
   const [busy, setBusy] = useState<string | null>(null);
@@ -200,6 +200,7 @@ export function KidScreen() {
           busy={busy === 'tech'}
           onStart={() => techAction(() => startTech(kid.id, s.tech.remainingSeconds))}
           onStop={() => techAction(() => stopTech(kid.id))}
+          onAsk={() => techAction(() => requestTech(kid.id))}
         />
 
         <section className={`pet area-pet${petDone ? ' done' : ''}`} aria-label={`${petName}'s task`}>

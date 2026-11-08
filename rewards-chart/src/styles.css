@@ -286,6 +286,8 @@ button:disabled { cursor: default; }
 .t-btn.resume { background: var(--gold); color: var(--ink); box-shadow: 0 5px 0 var(--gold-shadow); }
 .t-btn.pause { background: var(--ink); color: #fff; }
 .t-btn.wait { background: var(--panel-2); color: var(--muted); font-size: 16px; }
+.t-btn.ask { background: var(--gold, #FFC94A); color: #3a2600; box-shadow: 0 5px 0 #b8860b; font-size: 18px; }
+.t-btn.asked { font-size: 16px; color: #FFC94A; gap: 10px; }
 .t-btn:active:not(:disabled) { transform: translateY(3px); }
 
 /* Bonus */

@@ -16,7 +16,7 @@ const PAUSE = 'M7 4h4v16H7z M13 4h4v16h-4z';
 
 /**
  * Tech time: locked on school days; on weekends a start/pause countdown of the week's minutes.
- * Morning jobs have to be done before it can start.
+ * Morning jobs have to be done, then Mum or Dad says yes (once each day), before it can start.
  */
 export function TechCard({
   s,
@@ -24,12 +24,14 @@ export function TechCard({
   busy,
   onStart,
   onStop,
+  onAsk,
 }: {
   s: KidSummary;
   settings: Settings;
   busy: boolean;
   onStart(): void;
   onStop(): void;
+  onAsk(): void;
 }) {
   const t = s.tech;
   const mins = Math.floor(t.remainingSeconds / 60);
@@ -70,7 +72,7 @@ export function TechCard({
           <span className="status">WEEKENDS ONLY</span>
         </div>
         <div className="mins"><span className="big">{mins}</span><span className="unit">MIN SAVED</span></div>
-        <div className="note">Unlocks {dayName} morning. Earn more with bonus jobs!</div>
+        <div className="note">Opens {dayName} once Mum or Dad says yes. Earn more with bonus jobs!</div>
         {log}
       </section>
     );
@@ -109,7 +111,7 @@ export function TechCard({
     <section className={`panel tech ${paused ? 't-paused' : 't-ready'} area-tech`} aria-label="Tech time ready">
       <div className="row">
         <span className="title">TECH TIME</span>
-        <span className="status">{paused ? 'PAUSED' : 'READY'}</span>
+        <span className="status">{t.approval !== 'approved' && morningLeft === 0 ? 'NEEDS A YES' : paused ? 'PAUSED' : 'READY'}</span>
       </div>
       {paused ? (
         <>
@@ -122,6 +124,14 @@ export function TechCard({
       {morningLeft > 0 ? (
         <button className="t-btn wait" disabled>
           <Icon d={UI_ICONS.lock} size={20} />DO {morningLeft} MORNING {morningLeft === 1 ? 'JOB' : 'JOBS'} FIRST
+        </button>
+      ) : t.approval === 'none' ? (
+        <button className="t-btn ask" onClick={onAsk} disabled={busy}>
+          <Icon d={UI_ICONS.lock} size={20} />ASK MUM OR DAD
+        </button>
+      ) : t.approval === 'requested' ? (
+        <button className="t-btn wait asked" disabled>
+          <span className="live-dot" />WAITING FOR A YES…
         </button>
       ) : (
         <button className={`t-btn ${paused ? 'resume' : 'start'}`} onClick={onStart} disabled={busy}>

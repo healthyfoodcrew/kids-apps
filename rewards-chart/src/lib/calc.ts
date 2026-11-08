@@ -31,6 +31,7 @@ export interface TechState {
   remainingSeconds: number; // what's left this week (0 while banned)
   running: TechSession | null; // the timer that's counting down right now
   sessionIds: string[]; // this week's timer sessions (parents can reset them)
+  approval: 'none' | 'requested' | 'approved'; // weekends: a parent has to say yes each day
 }
 
 /** Seconds a timer session has used, never more than it was allowed. */
@@ -328,6 +329,7 @@ export function summarizeKid(kid: Kid, data: FamilyData, now: Date): KidSummary 
     remainingSeconds: ban ? 0 : Math.max(0, allowance * 60 - usedSeconds),
     running: ban ? null : open,
     sessionIds: weekSessions.map((t) => t.id),
+    approval: (data.techApprovals ?? []).find((a) => a.kid_id === kid.id && a.day === today)?.status ?? 'none',
   };
 
   const lifetimeStars = Math.max(

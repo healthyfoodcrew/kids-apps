@@ -101,6 +101,14 @@ export interface TechSession {
   ended_at: string | null;
 }
 
+export interface TechApproval {
+  kid_id: string;
+  day: string;
+  status: 'requested' | 'approved';
+  requested_at: string | null;
+  approved_at: string | null;
+}
+
 export interface FamilyData {
   settings: Settings;
   kids: Kid[];
@@ -110,6 +118,7 @@ export interface FamilyData {
   adjustments: Adjustment[];
   payouts: Payout[];
   techSessions: TechSession[];
+  techApprovals?: TechApproval[];
 }
 
 export const DEFAULT_SETTINGS: Settings = {
