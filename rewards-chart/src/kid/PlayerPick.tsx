@@ -3,6 +3,7 @@ import { Link } from 'react-router-dom';
 import { Icon, UI_ICONS } from '../components/Icon';
 import { KidAvatar } from '../components/KidAvatar';
 import { summarizeKid, timerState } from '../lib/calc';
+import { DailyQuote } from './DailyQuote';
 import { WeekCalendar } from './WeekCalendar';
 import { useFamily, useNow } from '../lib/store';
 import { formatMoneyShort, localParts } from '../lib/time';
@@ -94,6 +95,8 @@ export function PlayerPick() {
       </div>
 
       <WeekCalendar events={data.events ?? []} kids={data.kids} today={local.day} />
+
+      <DailyQuote day={local.day} />
 
       <Link to="/parent" className="parents-link">
         <Icon d={UI_ICONS.lock} size={18} />

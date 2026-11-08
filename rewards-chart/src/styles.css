@@ -438,7 +438,7 @@ button:disabled { cursor: default; }
 .wc-nav button:disabled { opacity: 0.35; }
 .wc-add { height: 44px; padding: 0 14px; border-radius: 12px; background: var(--gold); color: var(--ink); font-family: var(--display); font-size: 18px; letter-spacing: 0.04em; display: inline-flex; align-items: center; gap: 6px; text-decoration: none; box-shadow: 0 4px 0 var(--gold-shadow); }
 .wc-grid { display: grid; grid-template-columns: repeat(7, minmax(0, 1fr)); gap: 7px; }
-.wc-day { background: var(--panel-2); border-radius: 16px; padding: 8px 5px 10px; min-height: 250px; display: flex; flex-direction: column; gap: 6px; }
+.wc-day { background: var(--panel-2); border-radius: 16px; padding: 8px 5px 10px; min-height: 196px; display: flex; flex-direction: column; gap: 6px; }
 .wc-day.today { background: var(--gold); color: #3a2600; box-shadow: 0 5px 0 var(--gold-shadow); }
 .wc-day.past { opacity: 0.5; }
 .wc-date { display: flex; flex-direction: column; align-items: center; line-height: 1; gap: 2px; margin-bottom: 2px; }
@@ -465,6 +465,15 @@ button:disabled { cursor: default; }
 .wc-pop-card .pop-who { font-size: 15px; font-weight: 900; letter-spacing: 0.08em; color: var(--ev); }
 .wc-pop-card .pop-note { margin-top: 4px; background: var(--panel-2); border-radius: 14px; padding: 10px 14px; font-size: 18px; font-weight: 800; }
 .wc-pop-card .pop-close { margin-top: 10px; width: 100%; height: 56px; border: 0; border-radius: 16px; background: var(--gold); color: var(--ink); font-family: var(--display); font-size: 24px; letter-spacing: 0.04em; }
+
+.daily-quote {
+  width: 100%; max-width: 1000px; display: flex; align-items: center; gap: 18px; padding: 18px 24px; border-radius: 24px;
+  background: linear-gradient(120deg, #3b2a8f, #5a2f9e 55%, #7a3aa8); border: 3px solid #B98CFF; box-shadow: 0 6px 0 #4a2a7a;
+}
+.dq-star { width: 58px; height: 58px; flex-shrink: 0; border-radius: 18px; display: grid; place-items: center; background: var(--gold); color: #3a2600; transform: rotate(-6deg); box-shadow: 0 4px 0 var(--gold-shadow); }
+.dq-text { display: flex; flex-direction: column; gap: 4px; }
+.dq-label { font-size: 12px; font-weight: 900; letter-spacing: 0.14em; color: #E2CCFF; }
+.dq-text p { margin: 0; font-family: var(--display); font-size: clamp(22px, 3vw, 28px); line-height: 1.15; letter-spacing: 0.01em; }
 
 /* PIN pad */
 .pin-screen { min-height: 100vh; min-height: 100dvh; display: flex; flex-direction: column; align-items: center; justify-content: center; gap: 22px; padding: 24px; }

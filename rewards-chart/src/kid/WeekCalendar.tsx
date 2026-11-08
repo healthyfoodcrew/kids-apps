@@ -8,7 +8,7 @@ import type { CalEvent, Kid } from '../lib/types';
 
 export const FAMILY_COLOR = '#FFC94A';
 const DAY_NAMES = ['MON', 'TUE', 'WED', 'THU', 'FRI', 'SAT', 'SUN'];
-const MAX_SHOWN = 3;
+const MAX_SHOWN = 2;
 const MONTHS = ['Jan', 'Feb', 'Mar', 'Apr', 'May', 'Jun', 'Jul', 'Aug', 'Sep', 'Oct', 'Nov', 'Dec'];
 
 /** Colour of an event: the child's colour if it's just for one of them, gold for the family. */
