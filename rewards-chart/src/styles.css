@@ -39,6 +39,7 @@ body {
   overscroll-behavior: none;
 }
 button, input, select, textarea { font-family: inherit; font-size: inherit; color: inherit; }
+input, textarea, select { user-select: text; -webkit-user-select: text; }
 button { cursor: pointer; }
 button:disabled { cursor: default; }
 :focus-visible { outline: 3px solid var(--gold); outline-offset: 2px; }
