@@ -4,10 +4,19 @@ import { useFamily } from '../lib/store';
 import type { Kid } from '../lib/types';
 
 const STYLES = [
+  { id: 'surprise', label: '🎲 Surprise me' },
   { id: 'hero', label: 'Action hero' },
   { id: 'armour', label: 'Sci-fi armour' },
   { id: 'explorer', label: 'Explorer' },
   { id: 'space', label: 'Space ranger' },
+  { id: 'ninja', label: 'Ninja' },
+  { id: 'knight', label: 'Knight' },
+  { id: 'wizard', label: 'Wizard' },
+  { id: 'racer', label: 'Racing driver' },
+  { id: 'pirate', label: 'Pirate captain' },
+  { id: 'skater', label: 'Skater' },
+  { id: 'pixel', label: 'Pixel art' },
+  { id: 'comic', label: 'Comic book' },
 ];
 
 /** Shrinks a phone photo to at most 1024px and turns it into a JPEG data URL. */
@@ -35,7 +44,7 @@ export function CharacterMaker({ kid }: { kid: Kid }) {
   const { makeAvatar, saveKid } = useFamily();
   const fileRef = useRef<HTMLInputElement>(null);
   const [photo, setPhoto] = useState<string | null>(null);
-  const [style, setStyle] = useState('hero');
+  const [style, setStyle] = useState('surprise');
   const [busy, setBusy] = useState(false);
   const [result, setResult] = useState<{ path: string; url: string | null } | null>(null);
   const [msg, setMsg] = useState<{ kind: 'ok' | 'err'; text: string } | null>(null);

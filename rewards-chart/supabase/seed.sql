@@ -12,8 +12,8 @@ on conflict (id) do nothing;
 with k as (
   insert into public.kids (name, age, color, weekly_pocket_money, weekly_tech_minutes, sort)
   values
-    ('Tommy', 11, '#FF5A5A', 10, 210, 1),
-    ('Louie', 7, '#2EE6D6', 8, 210, 2)
+    ('Tommy', 7, '#FF5A5A', 10, 210, 1),
+    ('Louie', 11, '#2EE6D6', 8, 210, 2)
   returning id, name
 )
 insert into public.jobs (kid_ids, title, icon, kind, stars, max_per_week, days, sort)

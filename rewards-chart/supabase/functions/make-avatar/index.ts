@@ -14,23 +14,116 @@ const CORS = {
   'Access-Control-Allow-Methods': 'POST, OPTIONS',
 };
 
-const STYLES: Record<string, string> = {
-  hero: 'a bold action hero in a colourful adventure outfit with a cool jacket and gloves',
-  armour: 'a sci-fi armoured hero in a sleek glowing suit, helmet visor pushed up so the face shows',
-  explorer: 'a jungle explorer adventurer with a backpack, goggles on the forehead and a confident grin',
-  space: 'a space ranger in a bright astronaut-style suit with a glowing badge, helmet off',
+// Each style has its own costume, art style, pose and backdrop, so they look properly different.
+type Style = { outfit: string; art: string; scene: string };
+const STYLES: Record<string, Style> = {
+  hero: {
+    outfit: 'a bold action hero in a colourful adventure jacket, fingerless gloves and a utility belt',
+    art: 'stylised 3D battle-royale cartoon game art, smooth shading, bold saturated colours',
+    scene: 'a sunny floating island with palm trees and a supply drop balloon in the sky',
+  },
+  armour: {
+    outfit: 'a sleek sci-fi armoured hero with glowing panel lines, helmet visor flipped up so the face shows',
+    art: 'glossy 3D game render with neon rim lighting',
+    scene: 'a futuristic hangar with blue holograms and light beams',
+  },
+  explorer: {
+    outfit: 'a jungle explorer with a backpack, rope, goggles on the forehead and rolled-up sleeves',
+    art: 'warm painterly 3D adventure game art',
+    scene: 'a misty jungle with ancient temple ruins and vines',
+  },
+  space: {
+    outfit: 'a space ranger in a bright astronaut suit with a glowing badge, helmet tucked under one arm',
+    art: 'clean 3D animated film style with soft lighting',
+    scene: 'outer space with a ringed planet, stars and a small rocket',
+  },
+  ninja: {
+    outfit: 'a cool ninja in a coloured hooded outfit and headband, mask pulled down so the face shows, no weapons',
+    art: 'dynamic 3D anime-inspired cartoon art with speed lines',
+    scene: 'rooftops at sunset with paper lanterns and cherry blossom petals',
+  },
+  knight: {
+    outfit: 'a brave young knight in shiny armour with a cape and a crest shield on the back, no sword',
+    art: 'storybook 3D fantasy game art',
+    scene: 'a castle courtyard with flags flying and a friendly dragon peeking in the distance',
+  },
+  wizard: {
+    outfit: 'a young wizard in a starry robe and a pointy hat, holding a glowing staff with magic sparkles',
+    art: 'magical 3D animated film style with glowing particles',
+    scene: 'a cosy magic library with floating books and candles',
+  },
+  racer: {
+    outfit: 'a racing driver in a sponsor-free racing suit with a helmet held at the hip',
+    art: 'shiny 3D racing game art with motion blur',
+    scene: 'a racetrack pit lane with a colourful race car and chequered flags',
+  },
+  pirate: {
+    outfit: 'a friendly pirate captain with a tricorn hat, long coat and a parrot on the shoulder, no weapons',
+    art: 'bright 3D cartoon adventure art',
+    scene: 'the deck of a pirate ship on a sparkling sea with a treasure map',
+  },
+  skater: {
+    outfit: 'a cool skateboarder in a hoodie, cap and sneakers holding a skateboard',
+    art: 'street-art cartoon style with graffiti colours and thick outlines',
+    scene: 'a skate park with ramps and colourful graffiti walls',
+  },
+  pixel: {
+    outfit: 'a retro video game hero in a colourful tunic',
+    art: 'detailed 16-bit pixel art sprite portrait, crisp pixels, limited bright palette',
+    scene: 'a pixel-art world with blocky clouds, hills and floating coins',
+  },
+  comic: {
+    outfit: 'an original comic book superhero with a cape, chest emblem shaped like a star, and a mask pushed up on the forehead',
+    art: 'bold comic book illustration with ink outlines, halftone dots and a POW-style burst behind',
+    scene: 'a city skyline at dusk',
+  },
 };
 
-const BASE_PROMPT = (style: string) =>
-  [
-    'Turn the child in this photo into an original stylised 3D video-game character portrait,',
-    'in a bright, playful battle-royale cartoon art style: smooth shading, bold colours, slightly exaggerated proportions.',
-    `Dress them as ${style}.`,
-    'Keep their face, hair, skin tone and expression recognisable so the family can tell who it is.',
-    'Head-and-shoulders framing, friendly confident pose, age-appropriate and wholesome.',
-    'Plain vibrant gradient-free background in a single bold colour.',
-    'No text, no logos, no weapons, and not any existing or copyrighted game character.',
+// A random twist on every go, so making another one gives something new.
+const EXPRESSIONS = ['a huge cheeky grin', 'a confident smirk', 'a big excited laugh', 'a determined game face', 'a friendly wink', 'a proud victory smile'];
+const POSES = [
+  'head-and-shoulders, looking straight at the camera',
+  'three-quarter view with arms crossed',
+  'mid-action pose leaning into the frame',
+  'victory pose with a fist in the air',
+  'over-the-shoulder look back at the camera',
+  'thumbs up to the camera',
+];
+const EXTRAS = [
+  'a glowing trail of sparkles',
+  'a cool pet sidekick (a small robot or a puppy)',
+  'a shiny trophy',
+  'confetti bursting in the air',
+  'gold stars floating around',
+  'a pair of cool sunglasses pushed up on the head',
+  'a backpack covered in badges',
+  'glowing sneakers',
+];
+const COLOURS = ['red and gold', 'turquoise and purple', 'green and orange', 'blue and silver', 'pink and yellow', 'black and neon green', 'orange and teal'];
+const pick = <T,>(list: T[]) => list[Math.floor(Math.random() * list.length)];
+
+function ageLook(age: number | null): string {
+  if (!age) return '';
+  if (age <= 8) return `They are ${age} years old: draw them as a young ${age}-year-old kid with a playful, cute, youthful look and child proportions, not a teenager.`;
+  if (age <= 12) return `They are ${age} years old: draw them as a ${age}-year-old pre-teen with a cooler, slightly more grown-up look, still clearly a kid, not an adult.`;
+  return `They are ${age} years old: draw them as a teenager, not an adult.`;
+}
+
+function buildPrompt(styleId: string, age: number | null): { prompt: string; style: string } {
+  const id = STYLES[styleId] ? styleId : pick(Object.keys(STYLES));
+  const st = STYLES[id];
+  const prompt = [
+    `Turn the child in this photo into an original video-game character: ${st.art}.`,
+    `Dress them as ${st.outfit}, with a ${pick(COLOURS)} colour scheme.`,
+    `Pose: ${pick(POSES)}, with ${pick(EXPRESSIONS)}. Add ${pick(EXTRAS)}.`,
+    `Background: ${st.scene}.`,
+    ageLook(age),
+    'Keep their face shape, hair, skin tone and eye colour recognisable so the family can tell who it is.',
+    'Square portrait, the character fills most of the frame. Age-appropriate and wholesome.',
+    'No text, no logos, no weapons, and not any existing or copyrighted character.',
   ].join(' ');
+  return { prompt, style: id };
+}
 
 function json(body: unknown, status = 200) {
   return new Response(JSON.stringify(body), { status, headers: { ...CORS, 'Content-Type': 'application/json' } });
@@ -61,12 +154,12 @@ Deno.serve(async (req) => {
   } catch {
     return json({ error: 'Bad request' }, 400);
   }
-  const { kid_id, image, style = 'hero' } = body;
+  const { kid_id, image, style = 'surprise' } = body;
   if (!kid_id || !image || !image.startsWith('data:image/')) return json({ error: 'Missing photo or child' }, 400);
   if (image.length > 8_000_000) return json({ error: 'That photo is too big. Try a smaller one.' }, 413);
 
   const admin = createClient(url, service);
-  const { data: kid } = await admin.from('kids').select('id').eq('id', kid_id).maybeSingle();
+  const { data: kid } = await admin.from('kids').select('id, age').eq('id', kid_id).maybeSingle();
   if (!kid) return json({ error: 'Child not found' }, 404);
 
   // The server kills this function 150 seconds after it starts, so everything has to be
@@ -98,7 +191,7 @@ Deno.serve(async (req) => {
         headers: { Authorization: `Bearer ${openaiKey}`, 'Content-Type': 'application/json' },
         body: JSON.stringify({
           images: [{ image_url: image }],
-          prompt: BASE_PROMPT(STYLES[style] ?? STYLES.hero),
+          prompt: built.prompt,
           output_format: 'jpeg',
           output_compression: 88,
           n: 1,
@@ -114,7 +207,8 @@ Deno.serve(async (req) => {
     }
   };
 
-  log('start', { style, photoKB: Math.round(image.length / 1024) });
+  const built = buildPrompt(style, kid.age ?? null);
+  log('start', { style: built.style, age: kid.age, photoKB: Math.round(image.length / 1024) });
   let ai: { res: Response; body: any } | null = null;
   try {
     for (const opts of ATTEMPTS) {
