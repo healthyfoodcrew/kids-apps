@@ -509,6 +509,7 @@ button:disabled { cursor: default; }
 .star-steps .step-label { line-height: 1.1; text-align: center; }
 .money-foot .pm { font-size: 14px; font-weight: 800; }
 .money-foot .pm.ok { color: var(--muted); }
+.money-foot .pm.won { color: var(--green); }
 .money-foot .pm.lost { color: #FF8A8A; }
 .level-up .lu-badge { font-family: var(--display); font-size: 22px; letter-spacing: 0.12em; background: #FFC94A; color: #3a2600; padding: 6px 18px; border-radius: 999px; }
 .level-up h2 { font-size: 64px !important; color: #FFC94A; }
@@ -528,6 +529,7 @@ button:disabled { cursor: default; }
 .money-week .md-pay b { font-family: var(--display); font-weight: 400; font-size: 24px; }
 .money-week .md-pay small { font-size: 10px; font-weight: 900; letter-spacing: 0.1em; }
 .money-week .md-pay.on { background: #FFC94A; color: #3a2600; box-shadow: 0 4px 0 var(--gold-shadow); }
+.money-week .md-pay.goal { background: transparent; color: #FFC94A; border: 2px dashed #FFC94A; }
 .money-week .md-pay.off { background: var(--panel-2); color: var(--muted); text-decoration: line-through; }
 
 /* PIN pad */

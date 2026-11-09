@@ -117,9 +117,11 @@ export function ParentHome() {
             <Link key={s.kid.id} to={`/parent/adjust?kid=${s.kid.id}`} className="p-card p-kid" style={{ textDecoration: 'none', color: 'inherit', display: 'block' }}>
               <div style={{ display: 'flex', alignItems: 'center', gap: 10 }}>
                 <span className="name" style={{ flex: 1 }}><KidDot name={s.kid.name} color={ink} />{s.kid.name}</span>
-                <span className="amt" style={{ margin: 0 }}>{formatMoneyShort(s.money)}<small> / {formatMoneyShort(s.target)}</small></span>
+                <span className="amt" style={{ margin: 0 }}>
+                  {Math.max(0, s.weekStars)}★<small> · {s.weekDone ? `${formatMoneyShort(s.money)} earned` : s.onTrack ? `${formatMoneyShort(s.target)} on track` : 'money missed'}</small>
+                </span>
               </div>
-              <div className="p-bar"><div style={{ width: `${s.target ? Math.min(100, (s.money / s.target) * 100) : 0}%`, background: ink }} /></div>
+              <div className="p-bar"><div style={{ width: `${Math.round((s.moneyDays.filter((d) => d.status === 'done' || d.status === 'none').length / 7) * 100)}%`, background: s.onTrack ? ink : '#E5484D' }} /></div>
               <div style={{ display: 'flex', justifyContent: 'space-between', gap: 8, flexWrap: 'wrap' }}>
                 <span className="line">Morning <b>{s.doneCount}/{s.totalCount}</b>{s.eveningJobs.length > 0 && <> · Evening <b>{s.eveningDone}/{s.eveningJobs.length}</b></>}</span>
                 {s.tech.ban ? <span className="line" style={{ color: '#8a1c1c' }}><b style={{ color: '#8a1c1c' }}>Tech time dead</b> {banEndText(s.tech.ban.until, data.settings.timezone)}</span> : <span className="line">Tech time this week <b>{s.tech.total} min</b></span>}

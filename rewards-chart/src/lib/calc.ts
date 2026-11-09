@@ -82,6 +82,7 @@ export interface KidSummary {
   levelProgress: number; // 0..1 toward next level
   missedDays: string[];
   onTrack: boolean;
+  weekDone: boolean;
   moneyDays: { day: string; status: 'done' | 'missed' | 'today' | 'future' | 'none' }[]; // pocket money week tracker
   starMinutes: number; // tech minutes from stars this week
   milestoneMinutes: number;
@@ -228,6 +229,7 @@ export interface WeekMoney {
   moneyTaken: Adjustment[];
   missedDays: string[]; // days the daily jobs weren't all done (no pocket money this week)
   onTrack: boolean;
+  weekDone: boolean; // every day of the week finished: pocket money earned
 }
 
 /**
@@ -259,7 +261,12 @@ export function weekMoney(kid: Kid, data: FamilyData, ws: string, upTo = addDays
     if (allDailyDoneOn(kid.id, d, jobs, allCompletions) === false) missedDays.push(d);
   }
   const onTrack = missedDays.length === 0;
-  const earnedDollars = onTrack ? target : 0;
+  // Only earned once every day of the week (Mon to Sun) has all its daily jobs done.
+  let weekDone = true;
+  for (let d = ws; d <= addDays(ws, 6); d = addDays(d, 1)) {
+    if (allDailyDoneOn(kid.id, d, jobs, allCompletions) === false) weekDone = false;
+  }
+  const earnedDollars = weekDone ? target : 0;
   const moneyAdj = adj.filter((a) => a.kind === 'money');
   const moneyAdjust = sum(moneyAdj.map((a) => Number(a.amount)));
   const money = Math.max(0, Math.round((earnedDollars + moneyAdjust) * 100) / 100);
@@ -275,6 +282,7 @@ export function weekMoney(kid: Kid, data: FamilyData, ws: string, upTo = addDays
     moneyTaken: moneyAdj.filter((a) => a.amount < 0),
     missedDays,
     onTrack,
+    weekDone,
   };
 }
 
@@ -410,6 +418,7 @@ export function summarizeKid(kid: Kid, data: FamilyData, now: Date): KidSummary 
     moneyTaken: m.moneyTaken,
     missedDays: m.missedDays,
     onTrack: m.onTrack,
+    weekDone: m.weekDone,
     moneyDays: Array.from({ length: 7 }, (_, i) => {
       const day = addDays(ws, i);
       const st = allDailyDoneOn(kid.id, day, jobs, completions);

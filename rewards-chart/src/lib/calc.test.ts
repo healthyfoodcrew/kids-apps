@@ -46,15 +46,19 @@ function allDone(from: string, n: number) {
 }
 
 describe('pocket money (all or nothing)', () => {
-  it('is on track while every daily job has been done, then applies deductions', () => {
-    const completions = allDone('2025-11-10', 2); // Mon + Tue done; today (Wed) can still be finished
-    const s = summarizeKid(kid, data({ completions }), wedMorning);
+  it('is on track mid-week but only earned once every day of the week is done', () => {
+    const s = summarizeKid(kid, data({ completions: allDone('2025-11-10', 2) }), wedMorning);
     expect(s.onTrack).toBe(true);
-    expect(s.money).toBe(8);
+    expect(s.weekDone).toBe(false);
+    expect(s.money).toBe(0);
+    const sundayNight = new Date('2025-11-16T10:00:00Z'); // Sun 9pm
+    const full = summarizeKid(kid, data({ completions: allDone('2025-11-10', 7) }), sundayNight);
+    expect(full.weekDone).toBe(true);
+    expect(full.money).toBe(8);
     const withLoss = summarizeKid(
       kid,
-      data({ completions, adjustments: [{ id: 'a', kid_id: 'k1', kind: 'money', amount: -0.5, reason: 'rude', day: today, created_at: '' }] }),
-      wedMorning,
+      data({ completions: allDone('2025-11-10', 7), adjustments: [{ id: 'a', kid_id: 'k1', kind: 'money', amount: -0.5, reason: 'rude', day: today, created_at: '' }] }),
+      sundayNight,
     );
     expect(withLoss.money).toBe(7.5);
     expect(withLoss.moneyTaken).toHaveLength(1);

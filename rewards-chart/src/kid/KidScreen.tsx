@@ -149,17 +149,19 @@ export function KidScreen() {
                   <i>{d.status === 'done' ? '✓' : d.status === 'missed' ? '✕' : ['M', 'T', 'W', 'T', 'F', 'S', 'S'][i]}</i>
                 </span>
               ))}
-              <span className={`md-pay ${s.onTrack ? 'on' : 'off'}`}>
+              <span className={`md-pay ${s.weekDone ? 'on earned' : s.onTrack ? 'goal' : 'off'}`}>
                 <b>{formatMoneyShort(s.target)}</b>
-                <small>{s.payout ? 'PAID' : 'PAYDAY'}</small>
+                <small>{s.payout ? 'PAID' : s.weekDone ? 'EARNED!' : 'SUNDAY'}</small>
               </span>
             </div>
-            <span className={s.onTrack ? 'pm ok' : 'pm lost'}>
+            <span className={s.weekDone ? 'pm won' : s.onTrack ? 'pm ok' : 'pm lost'}>
               {s.payout
                 ? `Pocket money paid: ${formatMoneyShort(s.payout.amount)}`
-                : s.onTrack
-                  ? 'Do all your daily jobs every day to get your pocket money!'
-                  : 'Pocket money missed this week (a day of jobs was skipped).'}
+                : s.weekDone
+                  ? `You did every job, every day. ${formatMoneyShort(s.target)} pocket money earned!`
+                  : s.onTrack
+                    ? `Do every daily job, every day this week, to earn ${formatMoneyShort(s.target)} on Sunday!`
+                    : 'Pocket money missed this week (a day of jobs was skipped).'}
             </span>
             {lastLoss && (
               <span className="loss">
