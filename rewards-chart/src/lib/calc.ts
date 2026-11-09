@@ -201,13 +201,16 @@ export function starMinutes(stars: number, settings: Settings): number {
 
 /**
  * The weekly reward track for one child, sized to what they can really earn: five steps
- * (20% to 100%) of the stars available from their bonus jobs this week. Each step shows the
+ * (20% to 100%) of the stars available from their bonus jobs and speed bonuses this week. Each step shows the
  * tech minutes that many stars are worth, so changing the rate updates the track by itself.
  */
 export function starMilestones(kidId: string, jobs: Job[], settings: Settings): Milestone[] {
-  const max = sum(
+  const bonusMax = sum(
     jobs.filter((j) => j.active && j.kind === 'bonus' && j.kid_ids.includes(kidId)).map((j) => j.stars * Math.max(1, j.max_per_week)),
   );
+  // Speed bonuses (morning jobs done early) also earn stars: one chance each school day.
+  const speedMax = (settings.school_days?.length ?? 5) * Math.max(0, Number(settings.speed_bonus_stars ?? 0));
+  const max = bonusMax + speedMax;
   const top = Math.max(20, max);
   const steps = [0.2, 0.4, 0.6, 0.8, 1].map((f) => (f === 1 ? top : Math.max(5, Math.round((top * f) / 5) * 5)));
   return [...new Set(steps)].map((st) => ({ stars: st, minutes: starMinutes(st, settings) }));
@@ -243,7 +246,9 @@ export interface WeekMoney {
 export function weekMoney(kid: Kid, data: FamilyData, ws: string, upTo = addDays(ws, 7)): WeekMoney {
   const { settings, jobs } = data;
   const completions = data.completions.filter((c) => c.kid_id === kid.id && inWeek(c.day, ws));
-  const logs = data.bonusLogs.filter((b) => b.kid_id === kid.id && inWeek(b.day, ws));
+  // Bonus jobs count at their current star value, so changing a job's stars updates this week too.
+  const starsOf = (b: BonusLog) => jobs.find((j) => j.id === b.job_id)?.stars ?? b.stars;
+  const logs = data.bonusLogs.filter((b) => b.kid_id === kid.id && inWeek(b.day, ws)).map((b) => ({ ...b, stars: starsOf(b) }));
   const adj = data.adjustments.filter((a) => a.kid_id === kid.id && inWeek(a.day, ws));
   const last = upTo < addDays(ws, 6) ? upTo : addDays(ws, 6);
 
@@ -342,7 +347,7 @@ export function summarizeKid(kid: Kid, data: FamilyData, now: Date): KidSummary 
   const eveningJobs = jobsFor('evening');
   const doneCount = todayJobs.filter((t) => t.done).length;
 
-  const weekLogs = bonusLogs.filter((b) => inWeek(b.day, ws));
+  const weekLogs = bonusLogs.filter((b) => inWeek(b.day, ws)).map((b) => ({ ...b, stars: jobs.find((j) => j.id === b.job_id)?.stars ?? b.stars }));
   const bonusJobs: BonusJobState[] = bonusJobsFor(kid.id, jobs).map((job) => {
     const logs = weekLogs.filter((b) => b.job_id === job.id && b.status !== 'rejected');
     const pending = logs.filter((b) => b.status === 'pending');

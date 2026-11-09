@@ -77,18 +77,18 @@ describe('stars and tech time', () => {
     const completions = allDone('2025-11-10', 3); // regular jobs: no stars
     const s = summarizeKid(kid, data({ completions }), wedMorning);
     expect(s.weekStars).toBe(0);
-    // One bonus job: 15 stars x 3 a week = 45 stars max -> 10, 20, 25, 35, 45
-    expect(s.milestones.map((m) => m.stars)).toEqual([10, 20, 25, 35, 45]);
-    expect(s.milestones.map((m) => m.minutes)).toEqual([10, 20, 25, 35, 45]);
+    // One bonus job (15 x 3 = 45) + speed bonus (5 school days x 20 = 100) = 145 max
+    expect(s.milestones.map((m) => m.stars)).toEqual([30, 60, 85, 115, 145]);
+    expect(s.milestones.map((m) => m.minutes)).toEqual([30, 60, 85, 115, 145]);
     const bonusLogs = [{ id: 'b1', job_id: 'dish', kid_id: 'k1', day: today, stars: 15, tech_minutes: 0, status: 'approved' as const, created_at: '' }];
     const more = summarizeKid(kid, data({ completions, bonusLogs }), wedMorning);
     expect(more.weekStars).toBe(15);
     expect(more.starMinutes).toBe(15);
-    expect(more.milestonesReached).toBe(1);
+    expect(more.milestonesReached).toBe(0);
     // Changing the rate re-labels the track by itself.
     const half = summarizeKid(kid, data({ completions, bonusLogs, settings: { ...settings, minutes_per_10_stars: 5 } }), wedMorning);
     expect(half.starMinutes).toBe(7);
-    expect(half.milestones.map((m) => m.minutes)).toEqual([5, 10, 12, 17, 22]);
+    expect(half.milestones.map((m) => m.minutes)).toEqual([15, 30, 42, 57, 72]);
   });
   it('counts only approved bonus jobs; pending ones show separately', () => {
     const bonusLogs = [
