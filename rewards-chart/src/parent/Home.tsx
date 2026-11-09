@@ -12,7 +12,7 @@ function when(iso: string): string {
 
 /** "Today": what needs a parent right now, and how each child is tracking. */
 export function ParentHome() {
-  const { data, loading, error, reviewBonus, stopTech, resetTech, approveTech, revokeTech, addAdjustment } = useFamily();
+  const { data, loading, error, reviewBonus, stopTech, resetTech, approveTech, revokeTech, addAdjustment, recordPayout } = useFamily();
   const [setFor, setSetFor] = useState<string | null>(null);
   const [setVal, setSetVal] = useState('');
   const now = useNow(30_000);
@@ -24,7 +24,7 @@ export function ParentHome() {
   const kidById = new Map(data.kids.map((k) => [k.id, k]));
   const jobById = new Map(data.jobs.map((j) => [j.id, j]));
 
-  const owing = data.kids.flatMap((k) => payHistory(k, data, now, 8).filter((w) => w.status === 'due' || w.status === 'missed'));
+  const owing = data.kids.flatMap((k) => payHistory(k, data, now, 8).filter((w) => w.status === 'due' || w.status === 'missed').map((w) => ({ ...w, kid: k })));
   const owedTotal = owing.reduce((a, w) => a + w.amount, 0);
   const missed = owing.filter((w) => w.status === 'missed').length;
 
@@ -55,13 +55,29 @@ export function ParentHome() {
       {loading && <div className="p-empty">Loading…</div>}
 
       {owing.length > 0 && (
-        <Link to="/parent/payday" className="p-banner" style={{ textDecoration: 'none' }}>
-          <Icon d={UI_ICONS.wallet} size={22} />
-          <span className="grow">
-            {missed ? `${missed} missed pay day${missed === 1 ? '' : 's'}` : "It's pay day!"} · {formatMoney(owedTotal)} to pay
-          </span>
-          <span style={{ fontWeight: 800 }}>Tick off ›</span>
-        </Link>
+        <section className="p-section">
+          <h2>
+            {missed ? `Pay days not ticked off (${owing.length})` : "It's pay day!"} · {formatMoney(owedTotal)}
+          </h2>
+          <div className="p-list">
+            {owing.map((w) => (
+              <div key={`${w.kid.id}-${w.weekStart}`} className="p-row">
+                <KidDot name={w.kid.name} color={inkOf(w.kid.color)} />
+                <div className="grow">
+                  <div className="t">{w.kid.name} · {formatMoney(w.amount)}</div>
+                  <div className="m">Week {Number(w.weekStart.slice(8))}/{Number(w.weekStart.slice(5, 7))} – {Number(w.payday.slice(8))}/{Number(w.payday.slice(5, 7))}{w.status === 'missed' ? ' · not ticked off yet' : ' · pay day today'}</div>
+                </div>
+                <button className="p-btn" disabled={busy === `skip-${w.kid.id}-${w.weekStart}`} onClick={() => act(`skip-${w.kid.id}-${w.weekStart}`, () => recordPayout(w.kid.id, w.weekStart, 0))}>
+                  Skip
+                </button>
+                <button className="p-btn primary" disabled={busy === `pay-${w.kid.id}-${w.weekStart}`} onClick={() => act(`pay-${w.kid.id}-${w.weekStart}`, () => recordPayout(w.kid.id, w.weekStart, w.amount))}>
+                  Paid
+                </button>
+              </div>
+            ))}
+          </div>
+          <Link to="/parent/payday" className="p-link" style={{ display: 'inline-block', marginTop: 8, fontWeight: 700 }}>All pay days ›</Link>
+        </section>
       )}
 
       {techAsks.length > 0 && (

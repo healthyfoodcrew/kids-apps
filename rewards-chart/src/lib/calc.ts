@@ -304,7 +304,9 @@ export interface PayWeek {
 export function payHistory(kid: Kid, data: FamilyData, now: Date, weeks = 8): PayWeek[] {
   const today = localParts(now, data.settings.timezone).day;
   const thisWeek = weekStart(today);
-  const firstWeek = kid.created_at ? weekStart(localParts(new Date(kid.created_at), data.settings.timezone).day) : addDays(thisWeek, -7 * (weeks - 1));
+  // Pay weeks start from the first full week (Mon to Sun) after the child was added.
+  const added = kid.created_at ? localParts(new Date(kid.created_at), data.settings.timezone).day : null;
+  const firstWeek = added ? (weekStart(added) === added ? added : addDays(weekStart(added), 7)) : addDays(thisWeek, -7 * (weeks - 1));
   const out: PayWeek[] = [];
   for (let i = 0; i < weeks; i++) {
     const ws = addDays(thisWeek, -7 * i);
