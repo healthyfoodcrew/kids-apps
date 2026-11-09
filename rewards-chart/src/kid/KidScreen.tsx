@@ -142,11 +142,23 @@ export function KidScreen() {
                 : 'You beat the whole reward track. LEGEND!'}
               {s.pendingStars > 0 && ` (+${s.pendingStars} stars waiting for a thumbs up)`}
             </span>
+            <div className="money-week" aria-label="Pocket money this week">
+              <span className="mw-label">POCKET MONEY</span>
+              {s.moneyDays.map((d, i) => (
+                <span key={d.day} className={`md ${d.status}`} title={d.day}>
+                  <i>{d.status === 'done' ? '✓' : d.status === 'missed' ? '✕' : ['M', 'T', 'W', 'T', 'F', 'S', 'S'][i]}</i>
+                </span>
+              ))}
+              <span className={`md-pay ${s.onTrack ? 'on' : 'off'}`}>
+                <b>{formatMoneyShort(s.target)}</b>
+                <small>{s.payout ? 'PAID' : 'PAYDAY'}</small>
+              </span>
+            </div>
             <span className={s.onTrack ? 'pm ok' : 'pm lost'}>
               {s.payout
                 ? `Pocket money paid: ${formatMoneyShort(s.payout.amount)}`
                 : s.onTrack
-                  ? `Pocket money ${formatMoneyShort(s.target)} on track: do all your daily jobs every day!`
+                  ? 'Do all your daily jobs every day to get your pocket money!'
                   : 'Pocket money missed this week (a day of jobs was skipped).'}
             </span>
             {lastLoss && (

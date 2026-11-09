@@ -513,6 +513,23 @@ button:disabled { cursor: default; }
 .level-up .lu-badge { font-family: var(--display); font-size: 22px; letter-spacing: 0.12em; background: #FFC94A; color: #3a2600; padding: 6px 18px; border-radius: 999px; }
 .level-up h2 { font-size: 64px !important; color: #FFC94A; }
 
+.money-week { display: flex; align-items: center; gap: 7px; margin: 4px 0 2px; flex-wrap: wrap; }
+.money-week .mw-label { flex-basis: 100%; font-size: 12px; font-weight: 900; letter-spacing: 0.1em; color: var(--muted); }
+.money-week .md { width: 34px; height: 34px; flex-shrink: 0; border-radius: 50%; display: grid; place-items: center; background: var(--panel-2); border: 2px solid transparent; }
+.money-week .md i { font-style: normal; font-size: 14px; font-weight: 900; color: var(--muted); }
+.money-week .md.done { background: var(--green); }
+.money-week .md.done i { color: var(--green-ink); font-size: 18px; }
+.money-week .md.missed { background: #FF6B6B; }
+.money-week .md.missed i { color: #fff; font-size: 16px; }
+.money-week .md.today { border-color: #FFC94A; }
+.money-week .md.today i { color: #FFC94A; }
+.money-week .md.future { opacity: 0.55; }
+.money-week .md-pay { margin-left: 4px; padding: 4px 12px; border-radius: 14px; display: flex; flex-direction: column; align-items: center; line-height: 1; }
+.money-week .md-pay b { font-family: var(--display); font-weight: 400; font-size: 24px; }
+.money-week .md-pay small { font-size: 10px; font-weight: 900; letter-spacing: 0.1em; }
+.money-week .md-pay.on { background: #FFC94A; color: #3a2600; box-shadow: 0 4px 0 var(--gold-shadow); }
+.money-week .md-pay.off { background: var(--panel-2); color: var(--muted); text-decoration: line-through; }
+
 /* PIN pad */
 .pin-screen { min-height: 100vh; min-height: 100dvh; display: flex; flex-direction: column; align-items: center; justify-content: center; gap: 22px; padding: 24px; }
 .pin-screen h1 { margin: 0; font-family: var(--display); font-weight: 400; font-size: 40px; }

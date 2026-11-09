@@ -82,6 +82,7 @@ export interface KidSummary {
   levelProgress: number; // 0..1 toward next level
   missedDays: string[];
   onTrack: boolean;
+  moneyDays: { day: string; status: 'done' | 'missed' | 'today' | 'future' | 'none' }[]; // pocket money week tracker
   starMinutes: number; // tech minutes from stars this week
   milestoneMinutes: number;
   milestonesReached: number;
@@ -409,6 +410,13 @@ export function summarizeKid(kid: Kid, data: FamilyData, now: Date): KidSummary 
     moneyTaken: m.moneyTaken,
     missedDays: m.missedDays,
     onTrack: m.onTrack,
+    moneyDays: Array.from({ length: 7 }, (_, i) => {
+      const day = addDays(ws, i);
+      const st = allDailyDoneOn(kid.id, day, jobs, completions);
+      const status: 'done' | 'missed' | 'today' | 'future' | 'none' =
+        day > today ? 'future' : st === true ? 'done' : st === null ? 'none' : day === today ? 'today' : 'missed';
+      return { day, status };
+    }),
     starMinutes: st.fromStars,
     milestoneMinutes: st.fromMilestones,
     milestonesReached: st.reached,
