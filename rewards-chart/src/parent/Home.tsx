@@ -12,7 +12,9 @@ function when(iso: string): string {
 
 /** "Today": what needs a parent right now, and how each child is tracking. */
 export function ParentHome() {
-  const { data, loading, error, reviewBonus, stopTech, resetTech, approveTech, revokeTech } = useFamily();
+  const { data, loading, error, reviewBonus, stopTech, resetTech, approveTech, revokeTech, addAdjustment } = useFamily();
+  const [setFor, setSetFor] = useState<string | null>(null);
+  const [setVal, setSetVal] = useState('');
   const now = useNow(30_000);
   const [busy, setBusy] = useState<string | null>(null);
   const [msg, setMsg] = useState<string | null>(null);
@@ -182,6 +184,49 @@ export function ParentHome() {
                 >
                   Reset time
                 </button>
+                </div>
+                {/* Quick adjust: nudge this week's tech time up or down, or set it exactly. */}
+                <div style={{ width: '100%', display: 'flex', gap: 6, flexWrap: 'wrap', alignItems: 'center', marginTop: 4 }}>
+                  {[-15, -5, 5, 15].map((n) => (
+                    <button
+                      key={n}
+                      className="p-btn"
+                      style={{ padding: '5px 9px', minWidth: 0, fontSize: 14 }}
+                      disabled={busy === `adj-${s.kid.id}`}
+                      onClick={() => act(`adj-${s.kid.id}`, () => addAdjustment(s.kid.id, 'tech', n, n > 0 ? 'Added by a parent' : 'Taken by a parent'))}
+                    >
+                      {n > 0 ? `+${n}` : `−${-n}`}
+                    </button>
+                  ))}
+                  {setFor === s.kid.id ? (
+                    <>
+                      <input
+                        className="p-input"
+                        inputMode="numeric"
+                        placeholder="min"
+                        style={{ width: 72, padding: '6px 8px' }}
+                        value={setVal}
+                        autoFocus
+                        onChange={(e) => setSetVal(e.target.value.replace(/[^0-9]/g, ''))}
+                      />
+                      <button
+                        className="p-btn primary"
+                        style={{ padding: '6px 10px' }}
+                        disabled={setVal === '' || busy === `adj-${s.kid.id}`}
+                        onClick={() => {
+                          const diff = Number(setVal) - left;
+                          setSetFor(null);
+                          if (diff !== 0) act(`adj-${s.kid.id}`, () => addAdjustment(s.kid.id, 'tech', diff, `Set to ${setVal} min by a parent`));
+                        }}
+                      >
+                        Set
+                      </button>
+                    </>
+                  ) : (
+                    <button className="p-btn" style={{ padding: '5px 9px', fontSize: 14 }} onClick={() => { setSetFor(s.kid.id); setSetVal(String(left)); }}>
+                      Set…
+                    </button>
+                  )}
                 </div>
               </div>
             );

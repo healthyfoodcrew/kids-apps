@@ -2,7 +2,7 @@ import type { CSSProperties } from 'react';
 import { Link } from 'react-router-dom';
 import { Icon, UI_ICONS } from '../components/Icon';
 import { KidAvatar } from '../components/KidAvatar';
-import { STAR_MILESTONES, summarizeKid, timerState } from '../lib/calc';
+import { summarizeKid, timerState } from '../lib/calc';
 import { DailyQuote } from './DailyQuote';
 import { WeekCalendar } from './WeekCalendar';
 import { useFamily, useNow } from '../lib/store';
@@ -67,7 +67,7 @@ export function PlayerPick() {
         {data.kids.map((kid) => {
           const s = summarizeKid(kid, data, now);
           const stars = Math.max(0, s.weekStars);
-          const prevM = STAR_MILESTONES.filter((m) => m.stars <= stars).pop()?.stars ?? 0;
+          const prevM = s.milestones.filter((m) => m.stars <= stars).pop()?.stars ?? 0;
           const pct = s.nextMilestone ? Math.round(((stars - prevM) / (s.nextMilestone.stars - prevM)) * 100) : 100;
           return (
             <Link

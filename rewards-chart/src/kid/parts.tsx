@@ -141,7 +141,7 @@ export function RewardTrack({
 
 const STAR_PATH = 'M12 3l2.7 5.6 6.1.9-4.4 4.3 1 6.1L12 17l-5.4 2.9 1-6.1-4.4-4.3 6.1-.9z';
 
-/** Weekly star reward track: each milestone unlocks bonus tech minutes. */
+/** Weekly star reward track: each step shows the tech minutes that many stars are worth. */
 export function StarTrack({ stars, milestones, color }: { stars: number; milestones: { stars: number; minutes: number }[]; color: string }) {
   return (
     <div className="steps star-steps" style={{ '--kid': color } as CSSProperties} role="list" aria-label="Star reward track">

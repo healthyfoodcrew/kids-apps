@@ -3,7 +3,7 @@ import type { CSSProperties } from 'react';
 import { Link, Navigate, useParams } from 'react-router-dom';
 import { Icon, UI_ICONS } from '../components/Icon';
 import { KidAvatar } from '../components/KidAvatar';
-import { STAR_MILESTONES, summarizeKid, timerState } from '../lib/calc';
+import { summarizeKid, timerState } from '../lib/calc';
 import { useFamily, useNow } from '../lib/store';
 import { formatMoneyShort, localParts } from '../lib/time';
 import type { Job } from '../lib/types';
@@ -35,7 +35,7 @@ export function KidScreen() {
   useEffect(() => {
     if (!s) return;
     if (prevMilestones.current !== null && s.milestonesReached > prevMilestones.current) {
-      setLevelUp(STAR_MILESTONES[s.milestonesReached - 1] ?? null);
+      setLevelUp(s.milestones[s.milestonesReached - 1] ?? null);
     }
     prevMilestones.current = s.milestonesReached;
   }, [s?.milestonesReached]); // eslint-disable-line react-hooks/exhaustive-deps
@@ -130,15 +130,15 @@ export function KidScreen() {
               <span className="label">STARS!</span>
             </div>
             <div className="to-go" style={{ background: color }}>
-              <div className="big">+{s.starMinutes + s.milestoneMinutes}</div>
+              <div className="big">+{s.starMinutes}</div>
               <div className="small">MIN TECH TIME</div>
             </div>
           </div>
-          <StarTrack stars={Math.max(0, s.weekStars)} milestones={STAR_MILESTONES} color={color} />
+          <StarTrack stars={Math.max(0, s.weekStars)} milestones={s.milestones} color={color} />
           <div className="money-foot">
             <span className="next">
               {s.nextMilestone
-                ? `${s.nextMilestone.stars - Math.max(0, s.weekStars)} more stars to unlock +${s.nextMilestone.minutes} bonus minutes!`
+                ? `${s.nextMilestone.stars - Math.max(0, s.weekStars)} more stars to reach +${s.nextMilestone.minutes} min. Do bonus jobs to earn stars!`
                 : 'You beat the whole reward track. LEGEND!'}
               {s.pendingStars > 0 && ` (+${s.pendingStars} stars waiting for a thumbs up)`}
             </span>
@@ -207,7 +207,7 @@ export function KidScreen() {
                     <span className="icon-box"><Icon name={t.job.icon} size={28} /></span>
                     <span className="title">{t.job.title}</span>
                     {turns && !t.done && <span className="turn-tag">YOUR TURN</span>}
-                    <span className="foot">{t.done ? 'DONE!' : `TAP ME · +${t.job.stars}`}</span>
+                    <span className="foot">{t.done ? 'DONE!' : 'TAP ME'}</span>
                   </button>
                 );
               })}
@@ -250,9 +250,9 @@ export function KidScreen() {
                   onClick={() => tapQuest(t.job, t.completion?.id)}
                 >
                   {t.done ? (
-                    <><Icon d={UI_ICONS.check} size={20} strokeWidth={3.4} />+{t.job.stars} STARS</>
+                    <><Icon d={UI_ICONS.check} size={20} strokeWidth={3.4} />DONE!</>
                   ) : (
-                    <><PawPrint size={20} />{petTasks.length > 1 ? `${t.job.title.split(' ')[0].toUpperCase()} · +${t.job.stars}` : `I DID IT · +${t.job.stars}`}</>
+                    <><PawPrint size={20} />{petTasks.length > 1 ? t.job.title.split(' ')[0].toUpperCase() : 'I DID IT'}</>
                   )}
                 </button>
               ))}
@@ -327,7 +327,7 @@ export function KidScreen() {
             <div className="card">
               <div className="lu-badge">LEVEL UP!</div>
               <h2>+{levelUp.minutes} MIN</h2>
-              <p>You hit {levelUp.stars} stars this week! Bonus tech time unlocked.</p>
+              <p>You hit {levelUp.stars} stars this week! That's {levelUp.minutes} minutes of extra tech time.</p>
               <button onClick={() => setLevelUp(null)}>AWESOME!</button>
             </div>
           </div>

@@ -87,6 +87,7 @@ export interface KidSummary {
   starMinutes: number; // tech minutes from stars this week
   milestoneMinutes: number;
   milestonesReached: number;
+  milestones: Milestone[];
   nextMilestone: { stars: number; minutes: number } | null;
   streak: number;
   payout?: Payout;
@@ -191,23 +192,25 @@ export function streakFor(kidId: string, today: string, jobs: Job[], completions
   return streak;
 }
 
-/** Weekly star milestones on the reward track: each one unlocks bonus tech time. */
-export const STAR_MILESTONES = [
-  { stars: 100, minutes: 10 },
-  { stars: 200, minutes: 15 },
-  { stars: 350, minutes: 20 },
-  { stars: 500, minutes: 30 },
-  { stars: 750, minutes: 45 },
-];
+export type Milestone = { stars: number; minutes: number };
 
-/** Tech minutes from stars: the per-10-stars rate, plus any milestones reached. */
-export function starTech(weekStars: number, settings: Settings) {
-  const stars = Math.max(0, weekStars);
-  const fromStars = Math.floor((stars / 10) * Math.max(0, Number(settings.minutes_per_10_stars ?? 10)));
-  const reached = STAR_MILESTONES.filter((m) => stars >= m.stars);
-  const fromMilestones = sum(reached.map((m) => m.minutes));
-  const next = STAR_MILESTONES.find((m) => stars < m.stars) ?? null;
-  return { fromStars, fromMilestones, reached: reached.length, next };
+/** Tech minutes for a number of stars at the family rate (10 stars = N minutes). */
+export function starMinutes(stars: number, settings: Settings): number {
+  return Math.floor((Math.max(0, stars) / 10) * Math.max(0, Number(settings.minutes_per_10_stars ?? 10)));
+}
+
+/**
+ * The weekly reward track for one child, sized to what they can really earn: five steps
+ * (20% to 100%) of the stars available from their bonus jobs this week. Each step shows the
+ * tech minutes that many stars are worth, so changing the rate updates the track by itself.
+ */
+export function starMilestones(kidId: string, jobs: Job[], settings: Settings): Milestone[] {
+  const max = sum(
+    jobs.filter((j) => j.active && j.kind === 'bonus' && j.kid_ids.includes(kidId)).map((j) => j.stars * Math.max(1, j.max_per_week)),
+  );
+  const top = Math.max(20, max);
+  const steps = [0.2, 0.4, 0.6, 0.8, 1].map((f) => (f === 1 ? top : Math.max(5, Math.round((top * f) / 5) * 5)));
+  return [...new Set(steps)].map((st) => ({ stars: st, minutes: starMinutes(st, settings) }));
 }
 
 /** Every daily job (morning and evening) done that day? null = nothing to do. */
@@ -248,8 +251,8 @@ export function weekMoney(kid: Kid, data: FamilyData, ws: string, upTo = addDays
   for (let d = ws; d <= last; d = addDays(d, 1)) {
     if (earnedSpeedBonus(kid.id, d, jobs, completions, settings)) speedBonuses++;
   }
+  // Regular jobs don't earn stars (they unlock tech time and pocket money); bonus jobs do.
   const weekStars =
-    sum(completions.map((c) => c.stars)) +
     sum(logs.filter((b) => b.status === 'approved').map((b) => b.stars)) +
     speedBonuses * settings.speed_bonus_stars +
     sum(adj.filter((a) => a.kind === 'stars').map((a) => Number(a.amount)));
@@ -357,9 +360,16 @@ export function summarizeKid(kid: Kid, data: FamilyData, now: Date): KidSummary 
 
   // Tech time is a weekly allowance that starts again every Monday.
   const weekTech = adjustments.filter((a) => a.kind === 'tech' && inWeek(a.day, ws));
-  // Stars are what earn extra tech time now (per-10-stars rate + reward-track milestones).
-  const st = starTech(weekStars, settings);
-  const techEarned = st.fromStars + st.fromMilestones;
+  // Bonus-job stars earn extra tech time at the family rate.
+  const milestones = starMilestones(kid.id, jobs, settings);
+  const shownStars = Math.max(0, weekStars);
+  const st = {
+    fromStars: starMinutes(weekStars, settings),
+    fromMilestones: 0,
+    reached: milestones.filter((m) => shownStars >= m.stars).length,
+    next: milestones.find((m) => shownStars < m.stars) ?? null,
+  };
+  const techEarned = st.fromStars;
   const techGiven = sum(weekTech.filter((a) => a.amount > 0).map((a) => Number(a.amount)));
   const techTaken = -sum(weekTech.filter((a) => a.amount < 0).map((a) => Number(a.amount)));
   const ban = activeBan(kid, now);
@@ -388,8 +398,7 @@ export function summarizeKid(kid: Kid, data: FamilyData, now: Date): KidSummary 
 
   const lifetimeStars = Math.max(
     0,
-    sum(completions.map((c) => c.stars)) +
-      sum(bonusLogs.filter((b) => b.status === 'approved').map((b) => b.stars)) +
+    sum(bonusLogs.filter((b) => b.status === 'approved').map((b) => b.stars)) +
       sum(adjustments.filter((a) => a.kind === 'stars').map((a) => Number(a.amount))),
   );
 
@@ -429,6 +438,7 @@ export function summarizeKid(kid: Kid, data: FamilyData, now: Date): KidSummary 
     starMinutes: st.fromStars,
     milestoneMinutes: st.fromMilestones,
     milestonesReached: st.reached,
+    milestones,
     nextMilestone: st.next,
     tech,
     lifetimeStars,

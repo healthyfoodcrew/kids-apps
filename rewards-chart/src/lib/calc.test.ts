@@ -73,17 +73,22 @@ describe('pocket money (all or nothing)', () => {
 });
 
 describe('stars and tech time', () => {
-  it('turns stars into tech minutes (10 stars = 10 min) plus reward-track milestones', () => {
-    const completions = allDone('2025-11-10', 3); // 60 stars
+  it('only bonus jobs earn stars; stars turn into tech minutes on a track sized to the bonus jobs', () => {
+    const completions = allDone('2025-11-10', 3); // regular jobs: no stars
     const s = summarizeKid(kid, data({ completions }), wedMorning);
-    expect(s.weekStars).toBe(60);
-    expect(s.starMinutes).toBe(60);
-    expect(s.milestonesReached).toBe(0);
-    expect(s.nextMilestone?.stars).toBe(100);
-    const more = summarizeKid(kid, data({ completions, adjustments: [{ id: 'a', kid_id: 'k1', kind: 'stars', amount: 150, reason: '', day: today, created_at: '' }] }), wedMorning);
-    expect(more.weekStars).toBe(210);
-    expect(more.milestoneMinutes).toBe(10 + 15); // passed 100 and 200
-    expect(more.tech.earned).toBe(210 + 25);
+    expect(s.weekStars).toBe(0);
+    // One bonus job: 15 stars x 3 a week = 45 stars max -> 10, 20, 25, 35, 45
+    expect(s.milestones.map((m) => m.stars)).toEqual([10, 20, 25, 35, 45]);
+    expect(s.milestones.map((m) => m.minutes)).toEqual([10, 20, 25, 35, 45]);
+    const bonusLogs = [{ id: 'b1', job_id: 'dish', kid_id: 'k1', day: today, stars: 15, tech_minutes: 0, status: 'approved' as const, created_at: '' }];
+    const more = summarizeKid(kid, data({ completions, bonusLogs }), wedMorning);
+    expect(more.weekStars).toBe(15);
+    expect(more.starMinutes).toBe(15);
+    expect(more.milestonesReached).toBe(1);
+    // Changing the rate re-labels the track by itself.
+    const half = summarizeKid(kid, data({ completions, bonusLogs, settings: { ...settings, minutes_per_10_stars: 5 } }), wedMorning);
+    expect(half.starMinutes).toBe(7);
+    expect(half.milestones.map((m) => m.minutes)).toEqual([5, 10, 12, 17, 22]);
   });
   it('counts only approved bonus jobs; pending ones show separately', () => {
     const bonusLogs = [
