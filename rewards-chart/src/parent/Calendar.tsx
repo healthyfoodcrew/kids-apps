@@ -3,7 +3,7 @@ import { useNavigate } from 'react-router-dom';
 import { EVENT_ICONS, EventIcon } from '../components/EventIcon';
 import { Icon, UI_ICONS } from '../components/Icon';
 import { eventColor, eventWho } from '../kid/WeekCalendar';
-import { nextDate, weekDays } from '../lib/calc';
+import { nextDate } from '../lib/calc';
 import { useFamily, type EventInput } from '../lib/store';
 import { formatClock, weekdayOf } from '../lib/time';
 import type { CalEvent } from '../lib/types';
@@ -17,32 +17,25 @@ function dayText(day: string): string {
 }
 
 function blank(today: string): EventInput {
-  return { title: '', icon: 'star', kid_ids: [], day: today, start_time: null, repeat: 'none', note: null };
+  return { title: '', icon: 'star', kid_ids: [], day: today, end_day: null, start_time: null, repeat: 'none', note: null };
 }
 
 /** The add / edit event form. Used on the parents' Calendar tab and on the kids' iPad (adding only). */
 export function EventForm({ initial, onDone }: { initial: EventInput; onDone(): void }) {
-  const { data, today, saveEvent, deleteEvent } = useFamily();
+  const { data, saveEvent, deleteEvent } = useFamily();
   const [edit, setEdit] = useState<EventInput>(initial);
-  // Extra days to copy this event onto (each becomes its own event).
-  const [copies, setCopies] = useState<string[]>([]);
   const [busy, setBusy] = useState(false);
   const [msg, setMsg] = useState<string | null>(null);
   const kids = data.kids;
   const set = (p: Partial<EventInput>) => setEdit({ ...edit, ...p });
   const family = edit.kid_ids.length === 0;
-  const extra = copies.filter((d) => d !== edit.day);
 
   async function save() {
     if (!edit.title.trim()) return setMsg('Give the event a name.');
     setBusy(true);
     const clean = { ...edit, title: edit.title.trim(), note: edit.note?.trim() || null };
-    let err = await saveEvent(clean);
-    for (const day of extra) {
-      if (err) break;
-      const { id: _id, ...copy } = clean;
-      err = await saveEvent({ ...copy, day });
-    }
+    if (clean.end_day && clean.end_day <= clean.day) clean.end_day = null;
+    const err = await saveEvent(clean);
     setBusy(false);
     if (err) return setMsg(err);
     onDone();
@@ -94,8 +87,13 @@ export function EventForm({ initial, onDone }: { initial: EventInput; onDone(): 
 
           <div className="p-grid2">
             <label className="p-field">
-              <span>Day</span>
-              <input className="p-input" type="date" value={edit.day} onChange={(e) => e.target.value && set({ day: e.target.value })} />
+              <span>Starts</span>
+              <input
+                className="p-input"
+                type="date"
+                value={edit.day}
+                onChange={(e) => e.target.value && set({ day: e.target.value, end_day: edit.end_day && edit.end_day < e.target.value ? null : edit.end_day })}
+              />
             </label>
             <label className="p-field">
               <span>Time</span>
@@ -107,6 +105,22 @@ export function EventForm({ initial, onDone }: { initial: EventInput; onDone(): 
               />
             </label>
           </div>
+          <label className="p-field">
+            <span>{edit.repeat === 'weekly' ? 'Stop repeating after (optional)' : 'Ends (optional, for things that run over several days)'}</span>
+            <div style={{ display: 'flex', gap: 8 }}>
+              <input
+                className="p-input"
+                type="date"
+                style={{ flex: 1 }}
+                min={edit.day}
+                value={edit.end_day ?? ''}
+                onChange={(e) => set({ end_day: e.target.value || null })}
+              />
+              {edit.end_day && (
+                <button className="p-btn" onClick={(e) => { e.preventDefault(); set({ end_day: null }); }}>Clear</button>
+              )}
+            </div>
+          </label>
           <div className="p-card p-inline" style={{ justifyContent: 'space-between' }}>
             <div style={{ fontWeight: 700, fontSize: 15 }}>All day</div>
             <button
@@ -126,29 +140,6 @@ export function EventForm({ initial, onDone }: { initial: EventInput; onDone(): 
           </div>
 
           <div className="p-field">
-            <span>{edit.repeat === 'weekly' ? 'Also every week on (optional)' : 'Also on (optional)'}</span>
-            <div className="p-copydays" role="group" aria-label="Copy to other days">
-              {[...weekDays(today(), 0), ...weekDays(today(), 1)].map((d) => {
-                const own = d === edit.day;
-                const past = d < today();
-                const on = own || copies.includes(d);
-                return (
-                  <button
-                    key={d}
-                    aria-pressed={on}
-                    disabled={own || past}
-                    className={own ? 'own' : undefined}
-                    onClick={() => setCopies(on ? copies.filter((x) => x !== d) : [...copies, d])}
-                  >
-                    <span>{DAYS[weekdayOf(d) - 1]}</span>
-                    <b>{Number(d.slice(8))}</b>
-                  </button>
-                );
-              })}
-            </div>
-          </div>
-
-          <div className="p-field">
             <span>Picture</span>
             <div className="p-icons">
               {Object.entries(EVENT_ICONS).map(([k, v]) => (
@@ -164,7 +155,7 @@ export function EventForm({ initial, onDone }: { initial: EventInput; onDone(): 
             <input className="p-input" value={edit.note ?? ''} maxLength={60} onChange={(e) => set({ note: e.target.value })} placeholder="e.g. Pack your goggles" />
           </label>
 
-          <button className="p-btn primary block" onClick={save} disabled={busy}>{(edit.id ? 'Save' : 'Add to calendar') + (extra.length ? ` + ${extra.length} more ${extra.length === 1 ? 'day' : 'days'}` : '')}</button>
+          <button className="p-btn primary block" onClick={save} disabled={busy}>{edit.id ? 'Save' : 'Add to calendar'}</button>
           {edit.id && (
             <button className="p-btn block" onClick={remove} disabled={busy} style={{ color: 'var(--p-red)' }}>Delete event</button>
           )}
@@ -225,7 +216,7 @@ export function Calendar() {
                   key={e.id}
                   className="p-row"
                   style={{ width: '100%', textAlign: 'left', background: 'none', border: 0, font: 'inherit', color: 'inherit' }}
-                  onClick={() => setEdit({ id: e.id, title: e.title, icon: e.icon, kid_ids: e.kid_ids, day: e.day, start_time: e.start_time, repeat: e.repeat, note: e.note })}
+                  onClick={() => setEdit({ id: e.id, title: e.title, icon: e.icon, kid_ids: e.kid_ids, day: e.day, end_day: e.end_day, start_time: e.start_time, repeat: e.repeat, note: e.note })}
                 >
                   <span style={{ width: 38, height: 38, borderRadius: 10, display: 'grid', placeItems: 'center', background: `${c}33`, color: inkOf(c), flexShrink: 0 }}>
                     <EventIcon name={e.icon} size={20} />
@@ -233,7 +224,7 @@ export function Calendar() {
                   <div className="grow">
                     <div className="t">{e.title}</div>
                     <div className="m">
-                      {e.repeat === 'weekly' ? `Every ${DAYS[weekdayOf(e.day) - 1]} · next ${dayText(next)}` : dayText(next)}
+                      {e.repeat === 'weekly' ? `Every ${DAYS[weekdayOf(e.day) - 1]} · next ${dayText(next)}${e.end_day ? ` · until ${dayText(e.end_day)}` : ''}` : e.end_day ? `${dayText(e.day)} – ${dayText(e.end_day)}` : dayText(next)}
                       {' · '}
                       {e.start_time ? formatClock(e.start_time) : 'all day'} · {eventWho(e, kids)}
                     </div>

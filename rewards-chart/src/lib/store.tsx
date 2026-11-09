@@ -141,6 +141,7 @@ export interface EventInput {
   icon: string;
   kid_ids: string[];
   day: string;
+  end_day: string | null;
   start_time: string | null;
   repeat: 'none' | 'weekly';
   note: string | null;

@@ -1,5 +1,5 @@
 import { describe, expect, it } from 'vitest';
-import { dailyJobsFor, earnedSpeedBonus, kidsOnDuty, payHistory, streakFor, summarizeKid, timerState } from './calc';
+import { dailyJobsFor, eventsOn, earnedSpeedBonus, kidsOnDuty, payHistory, streakFor, summarizeKid, timerState } from './calc';
 import { addDays, localParts, weekStart } from './time';
 import { DEFAULT_SETTINGS, type FamilyData, type Job, type Kid } from './types';
 
@@ -264,5 +264,18 @@ describe('weekend tech timer', () => {
     // Monday: a fresh week, back to the full allowance.
     const mon = summarizeKid(kid, data({ techSessions }), new Date('2025-11-16T23:00:00Z'));
     expect(mon.tech.remainingSeconds).toBe(210 * 60);
+  });
+});
+
+describe('calendar', () => {
+  const ev = (p: object) => ({ id: 'e', title: 'Camp', icon: 'star', kid_ids: [], day: '2026-11-10', end_day: null, start_time: null, repeat: 'none', note: null, created_at: '', ...p }) as any;
+  it('shows multi-day events on every day they run', () => {
+    const camp = ev({ end_day: '2026-11-12' });
+    expect(['2026-11-09', '2026-11-10', '2026-11-11', '2026-11-12', '2026-11-13'].map((d) => eventsOn([camp], d).length)).toEqual([0, 1, 1, 1, 0]);
+  });
+  it('stops weekly events after their end date', () => {
+    const swim = ev({ repeat: 'weekly', end_day: '2026-11-20' });
+    expect(eventsOn([swim], '2026-11-17').length).toBe(1);
+    expect(eventsOn([swim], '2026-11-24').length).toBe(0);
   });
 });

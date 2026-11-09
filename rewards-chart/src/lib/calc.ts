@@ -411,7 +411,11 @@ export function pendingBonusLogs(data: FamilyData): BonusLog[] {
 /** Events on one day: one-off events on that date, plus weekly ones on the same weekday from their start. */
 export function eventsOn(events: CalEvent[], day: string): CalEvent[] {
   return events
-    .filter((e) => (e.repeat === 'weekly' ? e.day <= day && weekdayOf(e.day) === weekdayOf(day) : e.day === day))
+    .filter((e) =>
+      e.repeat === 'weekly'
+        ? e.day <= day && (!e.end_day || day <= e.end_day) && weekdayOf(e.day) === weekdayOf(day)
+        : e.day <= day && day <= (e.end_day ?? e.day),
+    )
     .sort((a, b) => (a.start_time ?? '').localeCompare(b.start_time ?? '') || a.title.localeCompare(b.title));
 }
 
@@ -423,8 +427,11 @@ export function weekDays(today: string, offset = 0): string[] {
 
 /** Next upcoming date (today or later) for an event, or null if a one-off has passed. */
 export function nextDate(e: CalEvent, today: string): string | null {
-  if (e.repeat !== 'weekly') return e.day >= today ? e.day : null;
+  if (e.repeat !== 'weekly') {
+    if (e.day >= today) return e.day;
+    return (e.end_day ?? e.day) >= today ? today : null; // still running
+  }
   if (e.day >= today) return e.day;
-  const diff = (weekdayOf(e.day) - weekdayOf(today) + 7) % 7;
-  return addDays(today, diff);
+  const next = addDays(today, (weekdayOf(e.day) - weekdayOf(today) + 7) % 7);
+  return e.end_day && next > e.end_day ? null : next;
 }

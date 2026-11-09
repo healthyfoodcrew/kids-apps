@@ -115,6 +115,7 @@ export interface CalEvent {
   icon: string;
   kid_ids: string[]; // empty = whole family
   day: string; // first (or only) day, YYYY-MM-DD
+  end_day: string | null; // last day for multi-day events (or when a weekly event stops); null = one day / forever
   start_time: string | null; // HH:MM:SS, null = all day
   repeat: 'none' | 'weekly';
   note: string | null;
