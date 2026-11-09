@@ -503,6 +503,16 @@ button:disabled { cursor: default; }
 .dq-label { font-size: 12px; font-weight: 900; letter-spacing: 0.14em; color: #E2CCFF; }
 .dq-text p { margin: 0; font-family: var(--display); font-size: clamp(22px, 3vw, 28px); line-height: 1.15; letter-spacing: 0.01em; }
 
+.stars-panel .star-count { color: #FFC94A; }
+.stars-panel .star-count::before { content: '★'; font-size: 0.6em; margin-right: 6px; vertical-align: 0.22em; }
+.star-steps .step.todo .step-dot, .star-steps .step.current .step-dot { color: #FFC94A; }
+.star-steps .step-label { line-height: 1.1; text-align: center; }
+.money-foot .pm { font-size: 14px; font-weight: 800; }
+.money-foot .pm.ok { color: var(--muted); }
+.money-foot .pm.lost { color: #FF8A8A; }
+.level-up .lu-badge { font-family: var(--display); font-size: 22px; letter-spacing: 0.12em; background: #FFC94A; color: #3a2600; padding: 6px 18px; border-radius: 999px; }
+.level-up h2 { font-size: 64px !important; color: #FFC94A; }
+
 /* PIN pad */
 .pin-screen { min-height: 100vh; min-height: 100dvh; display: flex; flex-direction: column; align-items: center; justify-content: center; gap: 22px; padding: 24px; }
 .pin-screen h1 { margin: 0; font-family: var(--display); font-weight: 400; font-size: 40px; }

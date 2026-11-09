@@ -80,6 +80,12 @@ export interface KidSummary {
   lifetimeStars: number;
   level: number;
   levelProgress: number; // 0..1 toward next level
+  missedDays: string[];
+  onTrack: boolean;
+  starMinutes: number; // tech minutes from stars this week
+  milestoneMinutes: number;
+  milestonesReached: number;
+  nextMilestone: { stars: number; minutes: number } | null;
   streak: number;
   payout?: Payout;
 }
@@ -183,6 +189,32 @@ export function streakFor(kidId: string, today: string, jobs: Job[], completions
   return streak;
 }
 
+/** Weekly star milestones on the reward track: each one unlocks bonus tech time. */
+export const STAR_MILESTONES = [
+  { stars: 100, minutes: 10 },
+  { stars: 200, minutes: 15 },
+  { stars: 350, minutes: 20 },
+  { stars: 500, minutes: 30 },
+  { stars: 750, minutes: 45 },
+];
+
+/** Tech minutes from stars: the per-10-stars rate, plus any milestones reached. */
+export function starTech(weekStars: number, settings: Settings) {
+  const stars = Math.max(0, weekStars);
+  const fromStars = Math.floor((stars / 10) * Math.max(0, Number(settings.minutes_per_10_stars ?? 10)));
+  const reached = STAR_MILESTONES.filter((m) => stars >= m.stars);
+  const fromMilestones = sum(reached.map((m) => m.minutes));
+  const next = STAR_MILESTONES.find((m) => stars < m.stars) ?? null;
+  return { fromStars, fromMilestones, reached: reached.length, next };
+}
+
+/** Every daily job (morning and evening) done that day? null = nothing to do. */
+function allDailyDoneOn(kidId: string, day: string, jobs: Job[], completions: Completion[]): boolean | null {
+  const dayJobs = [...dailyJobsFor(kidId, jobs, day, 'morning'), ...dailyJobsFor(kidId, jobs, day, 'evening')];
+  if (dayJobs.length === 0) return null;
+  return dayJobs.every((j) => completions.some((c) => c.job_id === j.id && c.kid_id === kidId && c.day === day));
+}
+
 export interface WeekMoney {
   weekStars: number;
   earnedDollars: number;
@@ -193,13 +225,16 @@ export interface WeekMoney {
   starsToNextDollar: number;
   coinsTotal: number;
   moneyTaken: Adjustment[];
+  missedDays: string[]; // days the daily jobs weren't all done (no pocket money this week)
+  onTrack: boolean;
 }
 
 /**
  * Pocket money for one week (Monday `ws` to Sunday), counting up to `upTo`.
- * $1 per `stars_per_dollar` stars, up to the weekly amount, then any money given or taken away.
+ * All or nothing: the full weekly amount if every daily job is done every day, then any money
+ * given or taken away. Days before `upTo` are judged (today can still be finished).
  */
-export function weekMoney(kid: Kid, data: FamilyData, ws: string, upTo = addDays(ws, 6)): WeekMoney {
+export function weekMoney(kid: Kid, data: FamilyData, ws: string, upTo = addDays(ws, 7)): WeekMoney {
   const { settings, jobs } = data;
   const completions = data.completions.filter((c) => c.kid_id === kid.id && inWeek(c.day, ws));
   const logs = data.bonusLogs.filter((b) => b.kid_id === kid.id && inWeek(b.day, ws));
@@ -217,9 +252,13 @@ export function weekMoney(kid: Kid, data: FamilyData, ws: string, upTo = addDays
     sum(adj.filter((a) => a.kind === 'stars').map((a) => Number(a.amount)));
 
   const target = Number(kid.weekly_pocket_money);
-  const spd = Math.max(1, settings.stars_per_dollar);
-  const counted = Math.max(0, weekStars);
-  const earnedDollars = Math.min(target, Math.floor(counted / spd));
+  const allCompletions = data.completions.filter((c) => c.kid_id === kid.id);
+  const missedDays: string[] = [];
+  for (let d = ws; d < upTo && d <= addDays(ws, 6); d = addDays(d, 1)) {
+    if (allDailyDoneOn(kid.id, d, jobs, allCompletions) === false) missedDays.push(d);
+  }
+  const onTrack = missedDays.length === 0;
+  const earnedDollars = onTrack ? target : 0;
   const moneyAdj = adj.filter((a) => a.kind === 'money');
   const moneyAdjust = sum(moneyAdj.map((a) => Number(a.amount)));
   const money = Math.max(0, Math.round((earnedDollars + moneyAdjust) * 100) / 100);
@@ -230,9 +269,11 @@ export function weekMoney(kid: Kid, data: FamilyData, ws: string, upTo = addDays
     money,
     target,
     toGo: Math.max(0, Math.round((target - money) * 100) / 100),
-    starsToNextDollar: earnedDollars >= target ? 0 : spd - (counted % spd),
+    starsToNextDollar: 0,
     coinsTotal: Math.ceil(target),
     moneyTaken: moneyAdj.filter((a) => a.amount < 0),
+    missedDays,
+    onTrack,
   };
 }
 
@@ -307,7 +348,9 @@ export function summarizeKid(kid: Kid, data: FamilyData, now: Date): KidSummary 
 
   // Tech time is a weekly allowance that starts again every Monday.
   const weekTech = adjustments.filter((a) => a.kind === 'tech' && inWeek(a.day, ws));
-  const techEarned = sum(weekLogs.filter((b) => b.status === 'approved').map((b) => b.tech_minutes));
+  // Stars are what earn extra tech time now (per-10-stars rate + reward-track milestones).
+  const st = starTech(weekStars, settings);
+  const techEarned = st.fromStars + st.fromMilestones;
   const techGiven = sum(weekTech.filter((a) => a.amount > 0).map((a) => Number(a.amount)));
   const techTaken = -sum(weekTech.filter((a) => a.amount < 0).map((a) => Number(a.amount)));
   const ban = activeBan(kid, now);
@@ -364,6 +407,12 @@ export function summarizeKid(kid: Kid, data: FamilyData, now: Date): KidSummary 
     coinsTotal,
     coinsFilled: Math.min(coinsTotal, Math.floor(money)),
     moneyTaken: m.moneyTaken,
+    missedDays: m.missedDays,
+    onTrack: m.onTrack,
+    starMinutes: st.fromStars,
+    milestoneMinutes: st.fromMilestones,
+    milestonesReached: st.reached,
+    nextMilestone: st.next,
     tech,
     lifetimeStars,
     level: Math.floor(lifetimeStars / STARS_PER_LEVEL) + 1,

@@ -35,7 +35,7 @@ export function SetupMenu() {
   const items = [
     { to: '/parent/setup/jobs', icon: UI_ICONS.list, title: 'Jobs', sub: `${jobCount} jobs across ${data.kids.length} kids` },
     { to: '/parent/setup/kids', icon: UI_ICONS.wallet, title: 'Kids, pocket money & characters', sub: data.kids.map((k) => `${k.name} $${Number(k.weekly_pocket_money)}`).join(' · ') },
-    { to: '/parent/setup/rules', icon: UI_ICONS.clock, title: 'School mornings & points', sub: `Leave ${formatClock(st.leave_time)} · ${st.stars_per_dollar} stars = $1` },
+    { to: '/parent/setup/rules', icon: UI_ICONS.clock, title: 'School mornings & points', sub: `Leave ${formatClock(st.leave_time)} · 10 stars = ${st.minutes_per_10_stars} min tech` },
     ...(role === 'parent' ? [{ to: '/parent/setup/pin', icon: UI_ICONS.lock, title: "Parent PIN for the kids' iPad", sub: 'Change the PIN' }] : []),
   ];
 
@@ -166,6 +166,7 @@ export function RulesSettings() {
       speed_bonus_stars: form.speed_bonus_stars,
       stars_per_dollar: Math.max(1, form.stars_per_dollar),
       bonus_tech_minutes: form.bonus_tech_minutes,
+      minutes_per_10_stars: Math.max(0, Math.min(120, Number(form.minutes_per_10_stars) || 0)),
       pet_name: (form.pet_name ?? 'Bruno').trim() || 'Bruno',
     });
     setMsg(err ? { kind: 'err', text: err } : { kind: 'ok', text: 'Saved' });
@@ -209,8 +210,7 @@ export function RulesSettings() {
       <div className="p-card p-section">
         <p className="p-label">Points</p>
         <div className="p-grid2">
-          <label className="p-field"><span>Stars for $1</span><input className="p-input" inputMode="numeric" value={form.stars_per_dollar} onChange={num('stars_per_dollar')} /></label>
-          <label className="p-field"><span>Extra tech min per bonus job</span><input className="p-input" inputMode="numeric" value={form.bonus_tech_minutes} onChange={num('bonus_tech_minutes')} /></label>
+          <label className="p-field"><span>Tech minutes for every 10 stars</span><input className="p-input" inputMode="numeric" value={form.minutes_per_10_stars} onChange={num('minutes_per_10_stars')} /></label>
         </div>
         <p className="p-label" style={{ textTransform: 'none', letterSpacing: 0, fontWeight: 600 }}>
           The week runs Monday to Sunday. Pocket money is paid on Sunday and tech time starts again every Monday.

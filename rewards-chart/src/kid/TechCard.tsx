@@ -39,7 +39,7 @@ export function TechCard({
   const [picking, setPicking] = useState(false);
   const log = (
     <div className="log">
-      {t.earned > 0 && <span className="plus">+{t.earned} min from bonus jobs</span>}
+      {t.earned > 0 && <span className="plus">+{t.earned} min from your stars</span>}
       {t.given > 0 && <span className="plus">+{t.given} min from Mum or Dad</span>}
       {t.takenReasons.slice(0, 1).map((a) => (
         <span key={a.id} className="minus">−{Math.abs(a.amount)} min{a.reason ? `: ${a.reason}` : ''}</span>
@@ -74,7 +74,7 @@ export function TechCard({
           <span className="status">WEEKENDS ONLY</span>
         </div>
         <div className="mins"><span className="big">{mins}</span><span className="unit">MIN SAVED</span></div>
-        <div className="note">Opens {dayName} once Mum or Dad says yes. Earn more with bonus jobs!</div>
+        <div className="note">Opens {dayName} once Mum or Dad says yes. Every 10 stars adds more!</div>
         {log}
       </section>
     );
@@ -102,7 +102,7 @@ export function TechCard({
           <span className="status">ALL USED</span>
         </div>
         <div className="dead-title" style={{ color: '#FFC94A', textShadow: 'none' }}>TIME'S UP!</div>
-        <div className="note">Starts again on Monday. Bonus jobs earn extra minutes!</div>
+        <div className="note">Starts again on Monday. Stars earn extra minutes!</div>
       </section>
     );
   }

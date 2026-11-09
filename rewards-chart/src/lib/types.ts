@@ -10,6 +10,7 @@ export interface Settings {
   speed_bonus_stars: number;
   stars_per_dollar: number;
   bonus_tech_minutes: number;
+  minutes_per_10_stars: number; // tech minutes earned for every 10 stars
   pet_name?: string;
 }
 
@@ -145,5 +146,6 @@ export const DEFAULT_SETTINGS: Settings = {
   speed_bonus_stars: 20,
   stars_per_dollar: 30,
   bonus_tech_minutes: 10,
+  minutes_per_10_stars: 10,
   pet_name: 'Bruno',
 };

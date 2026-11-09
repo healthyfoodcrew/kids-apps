@@ -3,11 +3,11 @@ import type { CSSProperties } from 'react';
 import { Link, Navigate, useParams } from 'react-router-dom';
 import { Icon, UI_ICONS } from '../components/Icon';
 import { KidAvatar } from '../components/KidAvatar';
-import { summarizeKid, timerState } from '../lib/calc';
+import { STAR_MILESTONES, summarizeKid, timerState } from '../lib/calc';
 import { useFamily, useNow } from '../lib/store';
 import { formatMoneyShort, localParts } from '../lib/time';
 import type { Job } from '../lib/types';
-import { Bone, Confetti, DogSitting, PawPrint, RewardTrack, TILE_COLORS, TimerCard } from './parts';
+import { Bone, Confetti, DogSitting, PawPrint, StarTrack, TILE_COLORS, TimerCard } from './parts';
 import { TechCard } from './TechCard';
 
 export function KidScreen() {
@@ -17,6 +17,8 @@ export function KidScreen() {
   const [toast, setToast] = useState<string | null>(null);
   const [busy, setBusy] = useState<string | null>(null);
   const [celebrate, setCelebrate] = useState(false);
+  const [levelUp, setLevelUp] = useState<{ stars: number; minutes: number } | null>(null);
+  const prevMilestones = useRef<number | null>(null);
   const prevAllDone = useRef<boolean | null>(null);
 
   const kid = data.kids.find((k) => k.id === kidId);
@@ -28,6 +30,15 @@ export function KidScreen() {
     if (prevAllDone.current === false && s.allDone) setCelebrate(true);
     prevAllDone.current = s.allDone;
   }, [s?.allDone]); // eslint-disable-line react-hooks/exhaustive-deps
+
+  // Big LEVEL UP the moment a new star milestone is reached.
+  useEffect(() => {
+    if (!s) return;
+    if (prevMilestones.current !== null && s.milestonesReached > prevMilestones.current) {
+      setLevelUp(STAR_MILESTONES[s.milestonesReached - 1] ?? null);
+    }
+    prevMilestones.current = s.milestonesReached;
+  }, [s?.milestonesReached]); // eslint-disable-line react-hooks/exhaustive-deps
 
   useEffect(() => {
     if (!toast) return;
@@ -49,7 +60,6 @@ export function KidScreen() {
   const petTasks = all.filter((t) => t.job.category === 'pet');
   const petName = data.settings.pet_name || 'Bruno';
   const petDone = petTasks.length > 0 && petTasks.every((t) => t.done);
-  const jobsToNext = Math.max(1, Math.ceil(s.starsToNextDollar / 10));
 
   async function tapQuest(job: Job, completionId?: string) {
     if (busy) return;
@@ -112,34 +122,32 @@ export function KidScreen() {
       </header>
 
       <div className="kid-grid">
-        {/* Pocket money — the star of the show */}
-        <section className="panel money area-money" aria-label="Pocket money this week">
+        {/* Stars: the star of the show. They earn tech time. */}
+        <section className="panel money stars-panel area-money" aria-label="Stars this week">
           <div className="money-top">
             <div className="money-amount">
-              <span className="big">{formatMoneyShort(s.money)}</span>
-              <span className="label">EARNED!</span>
+              <span className="big star-count">{Math.max(0, s.weekStars)}</span>
+              <span className="label">STARS!</span>
             </div>
             <div className="to-go" style={{ background: color }}>
-              <div className="big">{s.toGo > 0 ? formatMoneyShort(s.toGo) : 'ALL!'}</div>
-              <div className="small">{s.toGo > 0 ? 'MORE TO GO' : 'MAXED OUT'}</div>
+              <div className="big">+{s.starMinutes + s.milestoneMinutes}</div>
+              <div className="small">MIN TECH TIME</div>
             </div>
           </div>
-          <RewardTrack
-            total={s.coinsTotal}
-            filled={s.coinsFilled}
-            earnedFromStars={s.earnedDollars}
-            starsInto={data.settings.stars_per_dollar - s.starsToNextDollar}
-            starsPerDollar={data.settings.stars_per_dollar}
-            color={color}
-          />
+          <StarTrack stars={Math.max(0, s.weekStars)} milestones={STAR_MILESTONES} color={color} />
           <div className="money-foot">
             <span className="next">
-              {s.payout
-                ? `Paid out this week: ${formatMoneyShort(s.payout.amount)}`
-                : s.earnedDollars >= s.target
-                  ? 'You earned ALL your pocket money!'
-                  : `Do ${jobsToNext} more ${jobsToNext === 1 ? 'job' : 'jobs'} to unlock the next dollar!`}
+              {s.nextMilestone
+                ? `${s.nextMilestone.stars - Math.max(0, s.weekStars)} more stars to unlock +${s.nextMilestone.minutes} bonus minutes!`
+                : 'You beat the whole reward track. LEGEND!'}
               {s.pendingStars > 0 && ` (+${s.pendingStars} stars waiting for a thumbs up)`}
+            </span>
+            <span className={s.onTrack ? 'pm ok' : 'pm lost'}>
+              {s.payout
+                ? `Pocket money paid: ${formatMoneyShort(s.payout.amount)}`
+                : s.onTrack
+                  ? `Pocket money ${formatMoneyShort(s.target)} on track: do all your daily jobs every day!`
+                  : 'Pocket money missed this week (a day of jobs was skipped).'}
             </span>
             {lastLoss && (
               <span className="loss">
@@ -257,7 +265,7 @@ export function KidScreen() {
                   >
                     <Icon name={b.job.icon} size={34} strokeWidth={1.9} />
                     <span className="name">{b.job.title}</span>
-                    <span className="reward">{full ? 'ALL DONE THIS WEEK' : `+${b.job.stars} STARS · +${data.settings.bonus_tech_minutes} MIN`}</span>
+                    <span className="reward">{full ? 'ALL DONE THIS WEEK' : `+${b.job.stars} STARS`}</span>
                     {!full && b.pendingThisWeek === 0 && <span className="tap-hint">TAP WHEN DONE</span>}
                     <span className="pips">
                       {Array.from({ length: b.job.max_per_week }, (_, i) => (
@@ -294,6 +302,19 @@ export function KidScreen() {
                     : 'All morning jobs done. Go outside and play!'}
               </p>
               <button onClick={() => setCelebrate(false)}>LET'S GO!</button>
+            </div>
+          </div>
+        </>
+      )}
+      {levelUp && (
+        <>
+          <Confetti />
+          <div className="celebrate level-up" role="dialog" aria-modal="true" aria-label="Level up">
+            <div className="card">
+              <div className="lu-badge">LEVEL UP!</div>
+              <h2>+{levelUp.minutes} MIN</h2>
+              <p>You hit {levelUp.stars} stars this week! Bonus tech time unlocked.</p>
+              <button onClick={() => setLevelUp(null)}>AWESOME!</button>
             </div>
           </div>
         </>

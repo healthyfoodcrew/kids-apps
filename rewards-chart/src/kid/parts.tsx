@@ -139,6 +139,33 @@ export function RewardTrack({
   );
 }
 
+const STAR_PATH = 'M12 3l2.7 5.6 6.1.9-4.4 4.3 1 6.1L12 17l-5.4 2.9 1-6.1-4.4-4.3 6.1-.9z';
+
+/** Weekly star reward track: each milestone unlocks bonus tech minutes. */
+export function StarTrack({ stars, milestones, color }: { stars: number; milestones: { stars: number; minutes: number }[]; color: string }) {
+  return (
+    <div className="steps star-steps" style={{ '--kid': color } as CSSProperties} role="list" aria-label="Star reward track">
+      {milestones.map((m, i) => {
+        const prev = i === 0 ? 0 : milestones[i - 1].stars;
+        const done = stars >= m.stars;
+        const current = !done && stars >= prev;
+        const fill = done ? 1 : current ? Math.max(0, (stars - prev) / (m.stars - prev)) : 0;
+        return (
+          <div key={m.stars} className={`step ${done ? 'done' : current ? 'current' : 'todo'}${i === milestones.length - 1 ? ' last' : ''}`} role="listitem" aria-label={`${m.stars} stars: +${m.minutes} minutes${done ? ', unlocked' : ''}`}>
+            {i > 0 && (
+              <span className="step-line" aria-hidden="true">
+                <span style={{ width: `${Math.round((i === 0 ? 0 : fill) * 100)}%` }} />
+              </span>
+            )}
+            <span className="step-dot">{done ? <Icon d={UI_ICONS.check} size={22} strokeWidth={3.6} /> : <Icon d={STAR_PATH} size={22} filled />}</span>
+            <span className="step-label">{m.stars}★<br />+{m.minutes} MIN</span>
+          </div>
+        );
+      })}
+    </div>
+  );
+}
+
 export function Confetti() {
   const pieces = useMemo(
     () =>

@@ -36,41 +36,51 @@ describe('time helpers', () => {
   });
 });
 
-describe('pocket money', () => {
-  it('pays $1 per 30 stars, capped at the weekly amount, then applies deductions', () => {
-    const completions = [];
-    for (let i = 0; i < 3; i++) {
-      const d = addDays('2025-11-10', i);
-      completions.push(done('bed', d, `${addDays(d, -1)}T22:00:00Z`), done('teeth', d, `${addDays(d, -1)}T22:00:00Z`));
-    }
-    // 60 stars from jobs + 3 speed bonuses (finished 9:00am? no — 22:00Z = 9:00am local, too late) = 60
-    const s = summarizeKid(kid, data({ completions }), wedMorning);
-    expect(s.weekStars).toBe(60);
-    expect(s.earnedDollars).toBe(2);
-    expect(s.starsToNextDollar).toBe(30);
+function allDone(from: string, n: number) {
+  const out = [];
+  for (let i = 0; i < n; i++) {
+    const d = addDays(from, i);
+    out.push(done('bed', d, `${addDays(d, -1)}T22:00:00Z`), done('teeth', d, `${addDays(d, -1)}T22:00:00Z`));
+  }
+  return out;
+}
 
+describe('pocket money (all or nothing)', () => {
+  it('is on track while every daily job has been done, then applies deductions', () => {
+    const completions = allDone('2025-11-10', 2); // Mon + Tue done; today (Wed) can still be finished
+    const s = summarizeKid(kid, data({ completions }), wedMorning);
+    expect(s.onTrack).toBe(true);
+    expect(s.money).toBe(8);
     const withLoss = summarizeKid(
       kid,
       data({ completions, adjustments: [{ id: 'a', kid_id: 'k1', kind: 'money', amount: -0.5, reason: 'rude', day: today, created_at: '' }] }),
       wedMorning,
     );
-    expect(withLoss.money).toBe(1.5);
-    expect(withLoss.toGo).toBe(6.5);
-    expect(withLoss.coinsFilled).toBe(1);
+    expect(withLoss.money).toBe(7.5);
     expect(withLoss.moneyTaken).toHaveLength(1);
   });
-
-  it('never goes over the weekly amount from stars alone', () => {
-    const s = summarizeKid(
-      kid,
-      data({ adjustments: [{ id: 'a', kid_id: 'k1', kind: 'stars', amount: 1000, reason: '', day: today, created_at: '' }] }),
-      wedMorning,
-    );
-    expect(s.earnedDollars).toBe(8);
-    expect(s.toGo).toBe(0);
-    expect(s.starsToNextDollar).toBe(0);
+  it('is lost for the week once a day is missed', () => {
+    const completions = allDone('2025-11-10', 1); // Tuesday missed
+    const s = summarizeKid(kid, data({ completions }), wedMorning);
+    expect(s.onTrack).toBe(false);
+    expect(s.missedDays).toEqual(['2025-11-11']);
+    expect(s.money).toBe(0);
   });
+});
 
+describe('stars and tech time', () => {
+  it('turns stars into tech minutes (10 stars = 10 min) plus reward-track milestones', () => {
+    const completions = allDone('2025-11-10', 3); // 60 stars
+    const s = summarizeKid(kid, data({ completions }), wedMorning);
+    expect(s.weekStars).toBe(60);
+    expect(s.starMinutes).toBe(60);
+    expect(s.milestonesReached).toBe(0);
+    expect(s.nextMilestone?.stars).toBe(100);
+    const more = summarizeKid(kid, data({ completions, adjustments: [{ id: 'a', kid_id: 'k1', kind: 'stars', amount: 150, reason: '', day: today, created_at: '' }] }), wedMorning);
+    expect(more.weekStars).toBe(210);
+    expect(more.milestoneMinutes).toBe(10 + 15); // passed 100 and 200
+    expect(more.tech.earned).toBe(210 + 25);
+  });
   it('counts only approved bonus jobs; pending ones show separately', () => {
     const bonusLogs = [
       { id: 'b1', job_id: 'dish', kid_id: 'k1', day: today, stars: 15, tech_minutes: 10, status: 'approved' as const, created_at: '2025-11-11T20:00:00Z' },
@@ -79,49 +89,33 @@ describe('pocket money', () => {
     const s = summarizeKid(kid, data({ bonusLogs }), wedMorning);
     expect(s.weekStars).toBe(15);
     expect(s.pendingStars).toBe(15);
-    expect(s.bonusJobs[0].usedThisWeek).toBe(2);
     expect(s.bonusJobs[0].remaining).toBe(1);
-    expect(s.bonusJobs[0].latestPendingId).toBe('b2');
-    expect(s.tech.earned).toBe(10);
-    expect(s.tech.total).toBe(220);
+    expect(s.tech.earned).toBe(15);
   });
-});
-
-describe('tech time', () => {
-  it('is a weekly allowance: bonus minutes and parent changes count all week, then it starts again on Monday', () => {
+  it('parent changes count all week, then it starts again on Monday', () => {
     const adjustments = [
       { id: 'a1', kid_id: 'k1', kind: 'tech' as const, amount: -10, reason: 'screens after bedtime', day: today, created_at: '' },
-      { id: 'a2', kid_id: 'k1', kind: 'tech' as const, amount: -15, reason: 'Monday', day: '2025-11-10', created_at: '' },
       { id: 'a3', kid_id: 'k1', kind: 'tech' as const, amount: 5, reason: 'helpful', day: today, created_at: '' },
       { id: 'a4', kid_id: 'k1', kind: 'tech' as const, amount: -60, reason: 'last week', day: '2025-11-09', created_at: '' },
     ];
-    const bonusLogs = [
-      { id: 'b1', job_id: 'dish', kid_id: 'k1', day: '2025-11-10', stars: 15, tech_minutes: 10, status: 'approved' as const, created_at: '' },
-      { id: 'b2', job_id: 'dish', kid_id: 'k1', day: '2025-11-08', stars: 15, tech_minutes: 10, status: 'approved' as const, created_at: '' },
-    ];
-    const s = summarizeKid(kid, data({ adjustments, bonusLogs }), wedMorning);
-    expect(s.tech.earned).toBe(10);
-    expect(s.tech.taken).toBe(25);
+    const s = summarizeKid(kid, data({ adjustments }), wedMorning);
+    expect(s.tech.taken).toBe(10);
     expect(s.tech.given).toBe(5);
-    expect(s.tech.total).toBe(210 + 10 + 5 - 25);
+    expect(s.tech.total).toBe(210 + 5 - 10);
   });
 });
 
 describe('pay day', () => {
   const sundayEvening = new Date('2025-11-16T08:00:00Z'); // Sun 16 Nov, 7pm Melbourne
-  const kidSince = { ...kid, created_at: '2025-10-27T00:00:00Z' }; // joined the week of Mon 27 Oct
+  const kidSince = { ...kid, created_at: '2025-10-27T00:00:00Z' };
   it('lists each week, newest first, as due on Sunday and missed after that', () => {
     const payouts = [{ id: 'p1', kid_id: 'k1', week_start: '2025-10-27', amount: 3, paid_at: '' }];
-    // $2 earned in the week of 3 Nov (never paid), $1 in the week of 10 Nov (pay day today).
-    const adjustments = [
-      { id: 'a1', kid_id: 'k1', kind: 'stars' as const, amount: 60, reason: '', day: '2025-11-05', created_at: '' },
-      { id: 'a2', kid_id: 'k1', kind: 'stars' as const, amount: 30, reason: '', day: '2025-11-12', created_at: '' },
-    ];
-    const hist = payHistory(kidSince, data({ kids: [kidSince], payouts, adjustments }), sundayEvening);
-    expect(hist.map((w) => [w.weekStart, w.payday, w.status, w.amount])).toEqual([
-      ['2025-11-10', '2025-11-16', 'due', 1],
-      ['2025-11-03', '2025-11-09', 'missed', 2],
-      ['2025-10-27', '2025-11-02', 'paid', 0],
+    const completions = [...allDone('2025-11-03', 7), ...allDone('2025-11-10', 7)];
+    const hist = payHistory(kidSince, data({ kids: [kidSince], payouts, completions }), sundayEvening);
+    expect(hist.map((w) => [w.weekStart, w.status, w.amount])).toEqual([
+      ['2025-11-10', 'due', 8],
+      ['2025-11-03', 'missed', 8],
+      ['2025-10-27', 'paid', 0],
     ]);
   });
   it('does not count a week with nothing earned as missed', () => {

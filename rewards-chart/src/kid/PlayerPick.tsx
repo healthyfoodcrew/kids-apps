@@ -2,11 +2,11 @@ import type { CSSProperties } from 'react';
 import { Link } from 'react-router-dom';
 import { Icon, UI_ICONS } from '../components/Icon';
 import { KidAvatar } from '../components/KidAvatar';
-import { summarizeKid, timerState } from '../lib/calc';
+import { STAR_MILESTONES, summarizeKid, timerState } from '../lib/calc';
 import { DailyQuote } from './DailyQuote';
 import { WeekCalendar } from './WeekCalendar';
 import { useFamily, useNow } from '../lib/store';
-import { formatMoneyShort, localParts } from '../lib/time';
+import { localParts } from '../lib/time';
 
 function darken(hex: string, amount = 0.35): string {
   const n = parseInt(hex.replace('#', ''), 16);
@@ -66,7 +66,9 @@ export function PlayerPick() {
         )}
         {data.kids.map((kid) => {
           const s = summarizeKid(kid, data, now);
-          const pct = s.target > 0 ? Math.min(100, Math.round((s.money / s.target) * 100)) : 0;
+          const stars = Math.max(0, s.weekStars);
+          const prevM = STAR_MILESTONES.filter((m) => m.stars <= stars).pop()?.stars ?? 0;
+          const pct = s.nextMilestone ? Math.round(((stars - prevM) / (s.nextMilestone.stars - prevM)) * 100) : 100;
           return (
             <Link
               key={kid.id}
@@ -79,8 +81,8 @@ export function PlayerPick() {
               <div className="lvl">LEVEL {s.level}</div>
               <div className="stats">
                 <div className="row">
-                  <span className="cash">{formatMoneyShort(s.money)}</span>
-                  <span>{s.toGo > 0 ? `${formatMoneyShort(s.toGo)} to go` : 'All earned!'}</span>
+                  <span className="cash">{stars}★</span>
+                  <span>{s.nextMilestone ? `${s.nextMilestone.stars - stars} to +${s.nextMilestone.minutes} min` : 'Track complete!'}</span>
                 </div>
                 <div className="bar"><div style={{ width: `${pct}%` }} /></div>
                 <div className="sub">
