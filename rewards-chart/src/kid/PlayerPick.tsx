@@ -4,6 +4,7 @@ import { Icon, UI_ICONS } from '../components/Icon';
 import { KidAvatar } from '../components/KidAvatar';
 import { summarizeKid, timerState } from '../lib/calc';
 import { DailyQuote } from './DailyQuote';
+import { Weather } from './Weather';
 import { WeekCalendar } from './WeekCalendar';
 import { useFamily, useNow } from '../lib/store';
 import { localParts } from '../lib/time';
@@ -98,7 +99,10 @@ export function PlayerPick() {
 
       <WeekCalendar events={data.events ?? []} kids={data.kids} today={local.day} />
 
-      <DailyQuote day={local.day} />
+      <div className="quote-row">
+        <DailyQuote day={local.day} />
+        <Weather />
+      </div>
 
       <Link to="/parent" className="parents-link">
         <Icon d={UI_ICONS.lock} size={18} />

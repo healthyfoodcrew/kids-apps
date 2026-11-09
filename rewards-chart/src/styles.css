@@ -532,6 +532,15 @@ button:disabled { cursor: default; }
 .money-week .md-pay.goal { background: transparent; color: #FFC94A; border: 2px dashed #FFC94A; }
 .money-week .md-pay.off { background: var(--panel-2); color: var(--muted); text-decoration: line-through; }
 
+.quote-row { width: 100%; max-width: 1000px; display: flex; gap: 14px; align-items: stretch; }
+.quote-row .daily-quote { flex: 1; min-width: 0; }
+.weather { flex-shrink: 0; display: flex; align-items: center; gap: 10px; padding: 12px 18px 12px 12px; border-radius: 24px; background: linear-gradient(160deg, #1f6fb8, #2a3f9e); border: 3px solid #4FB8FF; box-shadow: 0 6px 0 #1b3d73; }
+.wx-text { display: flex; flex-direction: column; line-height: 1.05; }
+.wx-temp { font-family: var(--display); font-size: 38px; }
+.wx-label { font-size: 15px; font-weight: 900; }
+.wx-range { font-size: 12px; font-weight: 800; color: #CFE6FF; margin-top: 2px; white-space: nowrap; }
+.wx-tip { margin-top: 4px; font-size: 12px; font-weight: 900; color: #FFC94A; }
+
 /* PIN pad */
 .pin-screen { min-height: 100vh; min-height: 100dvh; display: flex; flex-direction: column; align-items: center; justify-content: center; gap: 22px; padding: 24px; }
 .pin-screen h1 { margin: 0; font-family: var(--display); font-weight: 400; font-size: 40px; }
