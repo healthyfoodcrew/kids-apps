@@ -123,6 +123,12 @@ export interface CalEvent {
   created_at: string;
 }
 
+export interface PayOverride {
+  kid_id: string;
+  day: string;
+  counts: boolean; // true = day counts as done (pay), false = doesn't (no pay)
+}
+
 export interface FamilyData {
   settings: Settings;
   kids: Kid[];
@@ -134,6 +140,7 @@ export interface FamilyData {
   techSessions: TechSession[];
   techApprovals?: TechApproval[];
   events?: CalEvent[];
+  payOverrides?: PayOverride[];
 }
 
 export const DEFAULT_SETTINGS: Settings = {

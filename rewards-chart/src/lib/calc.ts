@@ -1,5 +1,5 @@
 // All the game maths in one place, as plain functions so they can be tested.
-import type { Adjustment, BonusLog, Completion, FamilyData, Job, JobPeriod, Kid, Payout, Settings, TechSession, CalEvent } from './types';
+import type { PayOverride, Adjustment, BonusLog, Completion, FamilyData, Job, JobPeriod, Kid, Payout, Settings, TechSession, CalEvent } from './types';
 import { addDays, localParts, timeToSeconds, weekStart, weekdayOf } from './time';
 
 export const STARS_PER_LEVEL = 150;
@@ -83,7 +83,7 @@ export interface KidSummary {
   missedDays: string[];
   onTrack: boolean;
   weekDone: boolean;
-  moneyDays: { day: string; status: 'done' | 'missed' | 'today' | 'future' | 'none' }[]; // pocket money week tracker
+  moneyDays: { day: string; status: 'done' | 'missed' | 'today' | 'future' | 'none'; override: boolean | null }[]; // pocket money week tracker
   starMinutes: number; // tech minutes from stars this week
   milestoneMinutes: number;
   milestonesReached: number;
@@ -217,7 +217,10 @@ export function starMilestones(kidId: string, jobs: Job[], settings: Settings): 
 }
 
 /** Every daily job (morning and evening) done that day? null = nothing to do. */
-function allDailyDoneOn(kidId: string, day: string, jobs: Job[], completions: Completion[]): boolean | null {
+function allDailyDoneOn(kidId: string, day: string, jobs: Job[], completions: Completion[], overrides: PayOverride[] = []): boolean | null {
+  // A parent can overrule any day: counts (pay) or doesn't count (no pay).
+  const o = overrides.find((x) => x.kid_id === kidId && x.day === day);
+  if (o) return o.counts;
   const dayJobs = [...dailyJobsFor(kidId, jobs, day, 'morning'), ...dailyJobsFor(kidId, jobs, day, 'evening')];
   if (dayJobs.length === 0) return null;
   return dayJobs.every((j) => completions.some((c) => c.job_id === j.id && c.kid_id === kidId && c.day === day));
@@ -266,13 +269,13 @@ export function weekMoney(kid: Kid, data: FamilyData, ws: string, upTo = addDays
   const allCompletions = data.completions.filter((c) => c.kid_id === kid.id);
   const missedDays: string[] = [];
   for (let d = ws; d < upTo && d <= addDays(ws, 6); d = addDays(d, 1)) {
-    if (allDailyDoneOn(kid.id, d, jobs, allCompletions) === false) missedDays.push(d);
+    if (allDailyDoneOn(kid.id, d, jobs, allCompletions, data.payOverrides) === false) missedDays.push(d);
   }
   const onTrack = missedDays.length === 0;
   // Only earned once every day of the week (Mon to Sun) has all its daily jobs done.
   let weekDone = true;
   for (let d = ws; d <= addDays(ws, 6); d = addDays(d, 1)) {
-    if (allDailyDoneOn(kid.id, d, jobs, allCompletions) === false) weekDone = false;
+    if (allDailyDoneOn(kid.id, d, jobs, allCompletions, data.payOverrides) === false) weekDone = false;
   }
   const earnedDollars = weekDone ? target : 0;
   const moneyAdj = adj.filter((a) => a.kind === 'money');
@@ -437,10 +440,12 @@ export function summarizeKid(kid: Kid, data: FamilyData, now: Date): KidSummary 
     weekDone: m.weekDone,
     moneyDays: Array.from({ length: 7 }, (_, i) => {
       const day = addDays(ws, i);
-      const st = allDailyDoneOn(kid.id, day, jobs, completions);
-      const status: 'done' | 'missed' | 'today' | 'future' | 'none' =
-        day > today ? 'future' : st === true ? 'done' : st === null ? 'none' : day === today ? 'today' : 'missed';
-      return { day, status };
+      const st = allDailyDoneOn(kid.id, day, jobs, completions, data.payOverrides);
+      const ov = (data.payOverrides ?? []).find((x) => x.kid_id === kid.id && x.day === day);
+      const status: 'done' | 'missed' | 'today' | 'future' | 'none' = ov
+        ? ov.counts ? 'done' : 'missed'
+        : day > today ? 'future' : st === true ? 'done' : st === null ? 'none' : day === today ? 'today' : 'missed';
+      return { day, status, override: ov ? ov.counts : null };
     }),
     starMinutes: st.fromStars,
     milestoneMinutes: st.fromMilestones,

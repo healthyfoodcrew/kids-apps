@@ -12,7 +12,7 @@ function when(iso: string): string {
 
 /** "Today": what needs a parent right now, and how each child is tracking. */
 export function ParentHome() {
-  const { data, loading, error, reviewBonus, stopTech, resetTech, approveTech, revokeTech, addAdjustment, recordPayout } = useFamily();
+  const { data, loading, error, reviewBonus, stopTech, resetTech, approveTech, revokeTech, addAdjustment, recordPayout, setPayDay } = useFamily();
   const [setFor, setSetFor] = useState<string | null>(null);
   const [setVal, setSetVal] = useState('');
   const now = useNow(30_000);
@@ -79,6 +79,43 @@ export function ParentHome() {
           <Link to="/parent/payday" className="p-link" style={{ display: 'inline-block', marginTop: 8, fontWeight: 700 }}>All pay days ›</Link>
         </section>
       )}
+
+      {/* Pocket money days: tap a day to overrule it (Auto → Pay → No pay). */}
+      <section className="p-section">
+        <h2>Pocket money days</h2>
+        <div className="p-list">
+          {summaries.map((s) => (
+            <div key={s.kid.id} className="p-row" style={{ flexWrap: 'wrap' }}>
+              <KidDot name={s.kid.name} color={inkOf(s.kid.color)} />
+              <div className="grow">
+                <div className="t">{s.kid.name}</div>
+                <div className="m">{s.weekDone ? `${formatMoneyShort(s.target)} earned` : s.onTrack ? `${formatMoneyShort(s.target)} on track` : 'No pocket money this week'}</div>
+              </div>
+              <div style={{ width: '100%', display: 'grid', gridTemplateColumns: 'repeat(7, minmax(0, 1fr))', gap: 5, marginTop: 6 }}>
+                {s.moneyDays.map((d, i) => {
+                  const next = d.override === null ? true : d.override ? false : null;
+                  const bg = d.status === 'done' ? '#2F9E44' : d.status === 'missed' ? '#E5484D' : '#fff';
+                  const fg = d.status === 'done' || d.status === 'missed' ? '#fff' : 'var(--p-ink)';
+                  return (
+                    <button
+                      key={d.day}
+                      onClick={() => act(`pd-${s.kid.id}-${d.day}`, () => setPayDay(s.kid.id, d.day, next))}
+                      disabled={busy === `pd-${s.kid.id}-${d.day}`}
+                      aria-label={`${['Mon', 'Tue', 'Wed', 'Thu', 'Fri', 'Sat', 'Sun'][i]}: ${d.override === null ? 'auto' : d.override ? 'pay' : 'no pay'}`}
+                      style={{ border: d.override === null ? '1.5px solid #dfe3ea' : '2.5px solid var(--p-ink)', background: bg, color: fg, borderRadius: 10, padding: '5px 0', display: 'flex', flexDirection: 'column', alignItems: 'center', fontSize: 11, fontWeight: 800, lineHeight: 1.2 }}
+                    >
+                      <span>{['Mon', 'Tue', 'Wed', 'Thu', 'Fri', 'Sat', 'Sun'][i]}</span>
+                      <b style={{ fontSize: 15 }}>{d.status === 'done' ? '✓' : d.status === 'missed' ? '✕' : '·'}</b>
+                      <span style={{ fontSize: 9 }}>{d.override === null ? 'AUTO' : d.override ? 'PAY' : 'NO PAY'}</span>
+                    </button>
+                  );
+                })}
+              </div>
+            </div>
+          ))}
+        </div>
+        <div className="p-empty" style={{ textAlign: 'left', padding: '6px 2px', fontSize: 13 }}>Tap a day to change it: Auto → Pay → No pay. Your choice overrides the jobs.</div>
+      </section>
 
       {techAsks.length > 0 && (
         <section className="p-section">

@@ -72,6 +72,17 @@ describe('pocket money (all or nothing)', () => {
   });
 });
 
+describe('parent pay-day overrides', () => {
+  it('a parent can mark a missed day as paid, or a done day as no pay', () => {
+    const completions = allDone('2025-11-10', 1); // Tuesday missed
+    const fixed = summarizeKid(kid, data({ completions, payOverrides: [{ kid_id: 'k1', day: '2025-11-11', counts: true }] }), wedMorning);
+    expect(fixed.onTrack).toBe(true);
+    expect(fixed.moneyDays[1]).toMatchObject({ status: 'done', override: true });
+    const docked = summarizeKid(kid, data({ completions: allDone('2025-11-10', 2), payOverrides: [{ kid_id: 'k1', day: '2025-11-10', counts: false }] }), wedMorning);
+    expect(docked.onTrack).toBe(false);
+  });
+});
+
 describe('stars and tech time', () => {
   it('only bonus jobs earn stars; stars turn into tech minutes on a track sized to the bonus jobs', () => {
     const completions = allDone('2025-11-10', 3); // regular jobs: no stars
