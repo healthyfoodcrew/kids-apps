@@ -154,13 +154,23 @@ export function KidScreen() {
                 <small>{s.payout ? 'PAID' : s.weekDone ? 'EARNED!' : 'SUNDAY'}</small>
               </span>
             </div>
+            {s.needed.length > 0 && (
+              <div className="needed-row" aria-label="Bonus jobs needed for pocket money">
+                <span className="mw-label">ALSO NEEDED</span>
+                {s.needed.map((n) => (
+                  <span key={n.job.id} className={`needed ${n.done >= n.min ? 'ok' : ''}`}>
+                    {n.done >= n.min ? '✓ ' : ''}{n.job.title} {Math.min(n.done, n.min)}/{n.min}
+                  </span>
+                ))}
+              </div>
+            )}
             <span className={s.weekDone ? 'pm won' : s.onTrack ? 'pm ok' : 'pm lost'}>
               {s.payout
                 ? `Pocket money paid: ${formatMoneyShort(s.payout.amount)}`
                 : s.weekDone
                   ? `You did every job, every day. ${formatMoneyShort(s.target)} pocket money earned!`
                   : s.onTrack
-                    ? `Do every daily job, every day this week, to earn ${formatMoneyShort(s.target)} on Sunday!`
+                    ? `Do every daily job, every day${s.needed.length ? ', plus the jobs above,' : ''} to earn ${formatMoneyShort(s.target)} on Sunday!`
                     : 'Pocket money missed this week (a day of jobs was skipped).'}
             </span>
             {lastLoss && (

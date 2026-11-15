@@ -83,6 +83,7 @@ export interface KidSummary {
   missedDays: string[];
   onTrack: boolean;
   weekDone: boolean;
+  needed: { job: Job; min: number; done: number }[];
   moneyDays: { day: string; status: 'done' | 'missed' | 'today' | 'future' | 'none'; override: boolean | null }[]; // pocket money week tracker
   starMinutes: number; // tech minutes from stars this week
   milestoneMinutes: number;
@@ -226,6 +227,23 @@ function allDailyDoneOn(kidId: string, day: string, jobs: Job[], completions: Co
   return dayJobs.every((j) => completions.some((c) => c.job_id === j.id && c.kid_id === kidId && c.day === day));
 }
 
+export interface NeededJob {
+  job: Job;
+  done: number; // times done this week (approved or waiting for a thumbs up)
+  min: number;
+}
+
+/** Bonus jobs a parent marked as needed for pocket money, with this week's count. */
+export function neededJobsFor(kidId: string, data: FamilyData, ws: string): NeededJob[] {
+  return data.jobs
+    .filter((j) => j.active && j.kind === 'bonus' && j.money_min && j.kid_ids.includes(kidId))
+    .map((job) => ({
+      job,
+      min: Math.min(job.money_min as number, Math.max(1, job.max_per_week)),
+      done: data.bonusLogs.filter((b) => b.kid_id === kidId && b.job_id === job.id && b.status !== 'rejected' && inWeek(b.day, ws)).length,
+    }));
+}
+
 export interface WeekMoney {
   weekStars: number;
   earnedDollars: number;
@@ -239,6 +257,7 @@ export interface WeekMoney {
   missedDays: string[]; // days the daily jobs weren't all done (no pocket money this week)
   onTrack: boolean;
   weekDone: boolean; // every day of the week finished: pocket money earned
+  needed: { job: Job; min: number; done: number }[]; // bonus jobs needed for pocket money
 }
 
 /**
@@ -277,6 +296,9 @@ export function weekMoney(kid: Kid, data: FamilyData, ws: string, upTo = addDays
   for (let d = ws; d <= addDays(ws, 6); d = addDays(d, 1)) {
     if (allDailyDoneOn(kid.id, d, jobs, allCompletions, data.payOverrides) === false) weekDone = false;
   }
+  // Bonus jobs marked "needed for pocket money" must reach their minimum by Sunday.
+  const needed = neededJobsFor(kid.id, data, ws);
+  if (needed.some((n) => n.done < n.min)) weekDone = false;
   const earnedDollars = weekDone ? target : 0;
   const moneyAdj = adj.filter((a) => a.kind === 'money');
   const moneyAdjust = sum(moneyAdj.map((a) => Number(a.amount)));
@@ -294,6 +316,7 @@ export function weekMoney(kid: Kid, data: FamilyData, ws: string, upTo = addDays
     missedDays,
     onTrack,
     weekDone,
+    needed,
   };
 }
 
@@ -438,6 +461,7 @@ export function summarizeKid(kid: Kid, data: FamilyData, now: Date): KidSummary 
     missedDays: m.missedDays,
     onTrack: m.onTrack,
     weekDone: m.weekDone,
+    needed: m.needed,
     moneyDays: Array.from({ length: 7 }, (_, i) => {
       const day = addDays(ws, i);
       const st = allDailyDoneOn(kid.id, day, jobs, completions, data.payOverrides);

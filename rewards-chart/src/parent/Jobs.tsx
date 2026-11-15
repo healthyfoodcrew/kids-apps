@@ -59,6 +59,7 @@ export function Jobs() {
       category: 'quest',
       stars: group === 'bonus' ? 15 : 10,
       max_per_week: 3,
+      money_min: null,
       days: [1, 2, 3, 4, 5, 6, 7],
       active: true,
     });
@@ -69,7 +70,7 @@ export function Jobs() {
     setEditing({
       id: j.id, kid_ids: j.kid_ids, title: j.title, icon: j.icon, kind: j.kind, period: j.period ?? 'morning',
       assign_mode: j.assign_mode ?? 'each', rotation_offset: j.rotation_offset ?? 0, category: j.category ?? 'quest', stars: j.stars,
-      max_per_week: j.max_per_week, days: j.days, active: j.active,
+      max_per_week: j.max_per_week, money_min: j.money_min ?? null, days: j.days, active: j.active,
     });
   }
 
@@ -108,7 +109,7 @@ export function Jobs() {
     const err = await saveJob({
       id: j.id, kid_ids: j.kid_ids, title: j.title, icon: j.icon, kind: j.kind, period: j.period ?? 'morning',
       assign_mode: j.assign_mode ?? 'each', rotation_offset: j.rotation_offset ?? 0, category: j.category ?? 'quest', stars: j.stars,
-      max_per_week: j.max_per_week, days: j.days, active: !j.active,
+      max_per_week: j.max_per_week, money_min: j.money_min ?? null, days: j.days, active: !j.active,
     });
     if (err) setMsg({ kind: 'err', text: err });
   }
@@ -261,10 +262,29 @@ export function Jobs() {
         ) : (
           <div className="p-card p-section">
             <div className="p-stepper">
-              <button onClick={() => set({ max_per_week: Math.max(1, e.max_per_week - 1) })} aria-label="Fewer times">−</button>
+              <button onClick={() => { const n = Math.max(1, e.max_per_week - 1); set({ max_per_week: n, money_min: e.money_min ? Math.min(e.money_min, n) : null }); }} aria-label="Fewer times">−</button>
               <div className="val"><b>{e.max_per_week}×</b><span>a week each, at most</span></div>
               <button onClick={() => set({ max_per_week: Math.min(14, e.max_per_week + 1) })} aria-label="More times">+</button>
             </div>
+            <div className="p-inline" style={{ justifyContent: 'space-between', marginTop: 14 }}>
+              <div>
+                <div style={{ fontWeight: 700, fontSize: 15 }}>Needed for pocket money</div>
+                <div style={{ fontSize: 12, color: 'var(--p-muted)', fontWeight: 600 }}>Still earns stars as normal</div>
+              </div>
+              <button
+                className="p-toggle"
+                aria-pressed={!!e.money_min}
+                aria-label="Needed for pocket money"
+                onClick={() => set({ money_min: e.money_min ? null : Math.min(2, e.max_per_week) })}
+              />
+            </div>
+            {!!e.money_min && (
+              <div className="p-stepper" style={{ marginTop: 10 }}>
+                <button onClick={() => set({ money_min: Math.max(1, (e.money_min ?? 1) - 1) })} aria-label="Fewer needed">−</button>
+                <div className="val"><b>{e.money_min}×</b><span>a week needed, at least</span></div>
+                <button onClick={() => set({ money_min: Math.min(e.max_per_week, (e.money_min ?? 1) + 1) })} aria-label="More needed">+</button>
+              </div>
+            )}
           </div>
         )}
 
@@ -315,7 +335,7 @@ export function Jobs() {
                     {names(j.kid_ids, kids)}
                     {turns ? ` · take turns ${j.assign_mode === 'rotate_weekly' ? 'weekly' : 'daily'} (${kids.find((k) => k.id === onDuty)?.name ?? ''} ${j.assign_mode === 'rotate_weekly' ? 'this week' : 'today'})` : ''}
                     {' · '}
-                    {j.kind === 'daily' ? daysText(j.days) : `up to ${j.max_per_week}× a week`} · {j.stars} stars
+                    {j.kind === 'daily' ? daysText(j.days) : `up to ${j.max_per_week}× a week${j.money_min ? ` · ${j.money_min}× needed for pocket money` : ''}`} · {j.stars} stars
                     {j.active ? '' : ' · off'}
                   </div>
                 </button>

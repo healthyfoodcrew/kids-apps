@@ -72,6 +72,21 @@ describe('pocket money (all or nothing)', () => {
   });
 });
 
+describe('bonus jobs needed for pocket money', () => {
+  it('needs the minimum (e.g. 2 of 3) by Sunday on top of the daily jobs', () => {
+    const needJobs = jobs.map((j) => (j.id === 'dish' ? { ...j, money_min: 2 } : j));
+    const sundayNight = new Date('2025-11-16T10:00:00Z');
+    const log = (id: string, day: string) => ({ id, job_id: 'dish', kid_id: 'k1', day, stars: 15, tech_minutes: 0, status: 'approved' as const, created_at: '' });
+    const once = summarizeKid(kid, data({ jobs: needJobs, completions: allDone('2025-11-10', 7), bonusLogs: [log('b1', '2025-11-11')] }), sundayNight);
+    expect(once.needed[0]).toMatchObject({ done: 1, min: 2 });
+    expect(once.weekDone).toBe(false);
+    const twice = summarizeKid(kid, data({ jobs: needJobs, completions: allDone('2025-11-10', 7), bonusLogs: [log('b1', '2025-11-11'), log('b2', '2025-11-14')] }), sundayNight);
+    expect(twice.weekDone).toBe(true);
+    expect(twice.money).toBe(8);
+    expect(twice.weekStars).toBeGreaterThan(0); // still earns stars
+  });
+});
+
 describe('parent pay-day overrides', () => {
   it('a parent can mark a missed day as paid, or a done day as no pay', () => {
     const completions = allDone('2025-11-10', 1); // Tuesday missed

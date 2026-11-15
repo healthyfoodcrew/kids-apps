@@ -47,6 +47,7 @@ export interface Job {
   category?: 'quest' | 'pet'; // pet jobs show in the dog's own box
   stars: number;
   max_per_week: number;
+  money_min?: number | null; // bonus jobs: times a week needed to get pocket money (null = optional)
   days: number[];
   active: boolean;
   sort: number;

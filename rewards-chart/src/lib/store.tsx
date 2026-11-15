@@ -160,6 +160,7 @@ export interface JobInput {
   category?: 'quest' | 'pet';
   stars: number;
   max_per_week: number;
+  money_min?: number | null;
   days: number[];
   active: boolean;
 }
