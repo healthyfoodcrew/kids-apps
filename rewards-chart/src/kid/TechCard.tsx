@@ -1,4 +1,5 @@
-import { useState } from 'react';
+import { useEffect, useRef, useState } from 'react';
+import { playTimesUp, playWarning, unlockSound } from '../lib/sound';
 import { Icon, UI_ICONS } from '../components/Icon';
 import type { KidSummary } from '../lib/calc';
 import { banEndText, localParts } from '../lib/time';
@@ -37,6 +38,16 @@ export function TechCard({
   const t = s.tech;
   const mins = Math.floor(t.remainingSeconds / 60);
   const [picking, setPicking] = useState(false);
+
+  // Sounds: a chime at 1 minute left, and a jingle when the chosen time runs out (not when paused).
+  const last = useRef(t.sessionLeft);
+  useEffect(() => {
+    const prev = last.current;
+    const now = t.running ? t.sessionLeft : 0;
+    if (prev > 60 && now <= 60 && now > 0) playWarning();
+    if (prev > 0 && prev <= 3 && now === 0) playTimesUp();
+    last.current = now;
+  }, [t.sessionLeft, t.running]);
   const log = (
     <div className="log">
       {t.earned > 0 && <span className="plus">+{t.earned} min from your stars</span>}
@@ -136,7 +147,7 @@ export function TechCard({
           <span className="live-dot" />WAITING FOR A YES…
         </button>
       ) : (
-        <button className={`t-btn ${paused ? 'resume' : 'start'}`} onClick={() => setPicking(true)} disabled={busy}>
+        <button className={`t-btn ${paused ? 'resume' : 'start'}`} onClick={() => { unlockSound(); setPicking(true); }} disabled={busy}>
           <Icon d={PLAY} size={22} filled />{paused ? 'PLAY MORE' : 'START'}
         </button>
       )}
