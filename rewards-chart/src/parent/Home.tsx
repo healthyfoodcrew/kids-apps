@@ -1,5 +1,5 @@
 import { useState } from 'react';
-import { playTimesUp, playWarning, unlockSound } from '../lib/sound';
+import { playTimesUp, playWarning } from '../lib/sound';
 import { Link } from 'react-router-dom';
 import { Icon, UI_ICONS } from '../components/Icon';
 import { payHistory, pendingBonusLogs, summarizeKid } from '../lib/calc';
@@ -193,7 +193,7 @@ export function ParentHome() {
       <section className="p-section">
         <h2 style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between' }}>
           Tech time
-          <button className="p-btn" style={{ fontSize: 14, padding: '5px 10px' }} onClick={() => { unlockSound(); playWarning(); window.setTimeout(playTimesUp, 1200); }}>
+          <button className="p-btn" style={{ fontSize: 14, padding: '5px 10px' }} onClick={() => { playWarning(); window.setTimeout(playTimesUp, 1300); }}>
             🔔 Test alarm
           </button>
         </h2>
