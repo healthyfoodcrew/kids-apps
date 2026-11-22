@@ -5,6 +5,7 @@ import { KidAvatar } from '../components/KidAvatar';
 import { summarizeKid, timerState } from '../lib/calc';
 import { DailyQuote } from './DailyQuote';
 import { Weather } from './Weather';
+import { Countdowns } from './Countdowns';
 import { WeekCalendar } from './WeekCalendar';
 import { useFamily, useNow } from '../lib/store';
 import { localParts } from '../lib/time';
@@ -96,6 +97,8 @@ export function PlayerPick() {
           );
         })}
       </div>
+
+      <Countdowns today={local.day} />
 
       <WeekCalendar events={data.events ?? []} kids={data.kids} today={local.day} />
 
