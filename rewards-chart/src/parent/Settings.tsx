@@ -35,6 +35,7 @@ export function SetupMenu() {
   const items = [
     { to: '/parent/setup/jobs', icon: UI_ICONS.list, title: 'Jobs', sub: `${jobCount} jobs across ${data.kids.length} kids` },
     { to: '/parent/setup/kids', icon: UI_ICONS.wallet, title: 'Kids, pocket money & characters', sub: data.kids.map((k) => `${k.name} $${Number(k.weekly_pocket_money)}`).join(' · ') },
+    { to: '/parent/setup/countdowns', icon: UI_ICONS.clock, title: 'Countdowns', sub: `${(data.countdowns ?? []).filter((c) => c.day >= new Date().toISOString().slice(0, 10)).length} coming up (Christmas, trips, parties…)` },
     { to: '/parent/setup/rules', icon: UI_ICONS.clock, title: 'School mornings & points', sub: `Leave ${formatClock(st.leave_time)} · 10 stars = ${st.minutes_per_10_stars} min tech` },
     ...(role === 'parent' ? [{ to: '/parent/setup/pin', icon: UI_ICONS.lock, title: "Parent PIN for the kids' iPad", sub: 'Change the PIN' }] : []),
   ];

@@ -134,7 +134,17 @@ const EMPTY: FamilyData = {
   techApprovals: [],
   events: [],
   payOverrides: [],
+  countdowns: [],
 };
+
+export interface CountdownInput {
+  id?: string;
+  title: string;
+  day: string;
+  theme: import('./types').CountdownTheme;
+  note: string | null;
+  show_days: number;
+}
 
 export interface EventInput {
   id?: string;
@@ -197,6 +207,8 @@ export interface FamilyState {
   revokeTech(kidId: string): Promise<string | null>;
   saveEvent(ev: EventInput): Promise<string | null>;
   setPayDay(kidId: string, day: string, counts: boolean | null): Promise<string | null>;
+  saveCountdown(c: CountdownInput): Promise<string | null>;
+  deleteCountdown(id: string): Promise<string | null>;
   deleteEvent(id: string): Promise<string | null>;
   makeAvatar(kidId: string, photo: string, style: string): Promise<{ path?: string; url?: string | null; error?: string }>;
 }
@@ -226,7 +238,7 @@ export function FamilyProvider({ children }: { children: ReactNode }) {
   const refresh = useCallback(async () => {
     if (!supabase || !session || !role) return;
     const since = addDays(today(), -120);
-    const [settings, kids, jobs, completions, bonusLogs, adjustments, payouts, techSessions, techApprovals, events, payOverrides] = await Promise.all([
+    const [settings, kids, jobs, completions, bonusLogs, adjustments, payouts, techSessions, techApprovals, events, payOverrides, countdowns] = await Promise.all([
       supabase.from('settings').select('*').eq('id', 1).maybeSingle(),
       supabase.from('kids').select('*').order('sort'),
       supabase.from('jobs').select('*').order('sort'),
@@ -238,8 +250,9 @@ export function FamilyProvider({ children }: { children: ReactNode }) {
       supabase.from('tech_approvals').select('*').gte('day', addDays(today(), -7)),
       supabase.from('events').select('*').order('day'),
       supabase.from('pay_overrides').select('*').gte('day', addDays(today(), -70)),
+      supabase.from('countdowns').select('*').order('day'),
     ]);
-    const firstError = [settings, kids, jobs, completions, bonusLogs, adjustments, payouts, techSessions, techApprovals, events, payOverrides].find((r) => r.error)?.error;
+    const firstError = [settings, kids, jobs, completions, bonusLogs, adjustments, payouts, techSessions, techApprovals, events, payOverrides, countdowns].find((r) => r.error)?.error;
     if (firstError) {
       setError(firstError.message);
       setLoading(false);
@@ -259,6 +272,7 @@ export function FamilyProvider({ children }: { children: ReactNode }) {
       techApprovals: techApprovals.data ?? [],
       events: events.data ?? [],
       payOverrides: payOverrides.data ?? [],
+      countdowns: countdowns.data ?? [],
     } as FamilyData);
     setError(null);
     setLoading(false);
@@ -274,7 +288,7 @@ export function FamilyProvider({ children }: { children: ReactNode }) {
       pending = window.setTimeout(() => void refresh(), 250);
     };
     const channel = supabase.channel('family');
-    for (const table of ['settings', 'kids', 'jobs', 'completions', 'bonus_logs', 'adjustments', 'payouts', 'tech_sessions', 'tech_approvals', 'events', 'pay_overrides']) {
+    for (const table of ['settings', 'kids', 'jobs', 'completions', 'bonus_logs', 'adjustments', 'payouts', 'tech_sessions', 'tech_approvals', 'events', 'pay_overrides', 'countdowns']) {
       channel.on('postgres_changes', { event: '*', schema: 'public', table }, soon);
     }
     channel.subscribe();
@@ -387,6 +401,12 @@ export function FamilyProvider({ children }: { children: ReactNode }) {
           return id ? db.from('events').update(rest).eq('id', id) : db.from('events').insert(rest);
         }),
       deleteEvent: (id) => run(() => db.from('events').delete().eq('id', id)),
+      saveCountdown: (c) =>
+        run(() => {
+          const { id, ...rest } = c;
+          return id ? db.from('countdowns').update(rest).eq('id', id) : db.from('countdowns').insert(rest);
+        }),
+      deleteCountdown: (id) => run(() => db.from('countdowns').delete().eq('id', id)),
       setPayDay: (kidId, day, counts) =>
         run(() =>
           counts === null

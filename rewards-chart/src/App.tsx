@@ -7,6 +7,7 @@ import { useAuth, useCanManage } from './lib/store';
 import { supabase } from './lib/supabase';
 import { Adjust } from './parent/Adjust';
 import { AddEventPage, Calendar } from './parent/Calendar';
+import { CountdownsSettings } from './parent/CountdownsSettings';
 import { ParentHome } from './parent/Home';
 import { Jobs } from './parent/Jobs';
 import { Payday } from './parent/Payday';
@@ -70,6 +71,7 @@ function ParentRoutes() {
       <Route path="setup/kids" element={<KidsSettings />} />
       <Route path="setup/rules" element={<RulesSettings />} />
       <Route path="setup/pin" element={<PinSettings />} />
+      <Route path="setup/countdowns" element={<CountdownsSettings />} />
       <Route path="*" element={<Navigate to="/parent" replace />} />
     </Routes>
   );

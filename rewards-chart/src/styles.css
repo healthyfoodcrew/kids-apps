@@ -565,26 +565,26 @@ button:disabled { cursor: default; }
 .cd-decor { position: absolute; inset: 0; width: 100%; height: 100%; z-index: 0; pointer-events: none; }
 .countdown-tile.themed .cd-icon { background: rgba(0, 0, 0, 0.22); }
 .countdown-tile.themed .cd-date { color: rgba(255, 255, 255, 0.85); }
-/* Christmas A: festive red with snowflakes, gold ring, candy-cane edge */
-.xmas-a { background: linear-gradient(140deg, #8E1023, #C4162E 55%, #8E1023) !important; border: 0 !important; box-shadow: 0 6px 0 #5A0A16 !important; }
-.xmas-a::after { content: ''; position: absolute; left: 0; right: 0; bottom: 0; height: 10px; z-index: 1; background: repeating-linear-gradient(135deg, #fff 0 10px, #E5484D 10px 20px); }
-.xmas-a .cd-ring circle:last-child { stroke: #FFC94A; }
-.xmas-a .cd-ring circle:first-child { stroke: rgba(0, 0, 0, 0.28); }
-.xmas-a .cd-chip { background: #2FBF4F; color: #08310f; }
-/* Christmas B: snowy night scene */
-.xmas-b { background: linear-gradient(180deg, #0B1640, #1C2D6B) !important; border-color: #2FBF4F !important; box-shadow: 0 6px 0 #146b2a !important; }
-.xmas-b .cd-ring circle:last-child { stroke: #FF5A5A; }
-.xmas-b .cd-chip { background: #2FBF4F; color: #08310f; }
-/* Japan A: night sky, rising sun, falling sakura */
-.japan-a { background: linear-gradient(160deg, #150F3D, #2E1A5E) !important; border-color: #FF8CC0 !important; box-shadow: 0 6px 0 #8E2E5C !important; }
-.japan-a .cd-ring circle:last-child { stroke: #FF8CC0; }
-.japan-a .cd-chip { background: #E5484D; color: #fff; }
-/* Japan B: sunset over Mt Fuji with a cherry blossom branch */
-.japan-b { background: linear-gradient(180deg, #FF8A5B, #E0559A 55%, #6A3D9A) !important; border-color: #FFD1E3 !important; box-shadow: 0 6px 0 #6A3D9A !important; }
-.japan-b .cd-ring circle:first-child { stroke: rgba(40, 20, 70, 0.35); }
-.japan-b .cd-ring circle:last-child { stroke: #fff; }
-.japan-b .cd-unit, .japan-b .cd-date { color: #FFF1F6; }
-.japan-b .cd-chip { background: #fff; color: #A3245E; }
+/* Countdown scenes */
+.countdown-tile.themed .cd-unit { color: rgba(255, 255, 255, 0.8); }
+.countdown-tile.themed .cd-chip { background: var(--cd); color: #1d1a52; }
+.cd-xmas { background: linear-gradient(180deg, #0B1640, #1C2D6B) !important; border-color: #2FBF4F !important; box-shadow: 0 6px 0 #146b2a !important; }
+.cd-xmas .cd-chip { background: #2FBF4F; color: #08310f; }
+.cd-japan { background: linear-gradient(180deg, #FF8A5B, #E0559A 55%, #6A3D9A) !important; border-color: #FFD1E3 !important; box-shadow: 0 6px 0 #6A3D9A !important; }
+.cd-japan .cd-chip { background: #fff; color: #A3245E; }
+.cd-travel { background: linear-gradient(180deg, #2E8BEA, #7CC4FF) !important; border-color: #D6EEFF !important; box-shadow: 0 6px 0 #1E5FA8 !important; }
+.cd-travel .cd-chip { background: #fff; color: #1E5FA8; }
+.cd-beach { background: linear-gradient(180deg, #48C6FF, #9BE3FF 60%, #F7D79B) !important; border-color: #FFC94A !important; box-shadow: 0 6px 0 #C78A1E !important; }
+.cd-beach .cd-num, .cd-beach h3 { color: #0B3C66; }
+.cd-beach .cd-date, .cd-beach .cd-unit { color: #0B3C66 !important; }
+.cd-birthday { background: linear-gradient(160deg, #7B3FD1, #C04FCB) !important; border-color: #FFC94A !important; box-shadow: 0 6px 0 #4E2490 !important; }
+.cd-party { background: linear-gradient(160deg, #1A0F3D, #3A1466) !important; border-color: #FF5AC8 !important; box-shadow: 0 6px 0 #8E1F72 !important; }
+.cd-sport { background: linear-gradient(180deg, #1F9D47, #157A36) !important; border-color: #fff !important; box-shadow: 0 6px 0 #0D5A26 !important; }
+.cd-sport .cd-chip { background: #fff; color: #157A36; }
+.cd-plain { border-color: #4FB8FF !important; box-shadow: 0 6px 0 #1E5FA8 !important; }
+
+.cd-preview { margin: 0 0 14px; font-family: var(--body, 'Nunito', sans-serif); color: #fff; }
+.cd-preview .countdown-tile { border-radius: 22px; }
 
 /* PIN pad */
 .pin-screen { min-height: 100vh; min-height: 100dvh; display: flex; flex-direction: column; align-items: center; justify-content: center; gap: 22px; padding: 24px; }

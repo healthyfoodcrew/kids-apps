@@ -130,6 +130,18 @@ export interface PayOverride {
   counts: boolean; // true = day counts as done (pay), false = doesn't (no pay)
 }
 
+export type CountdownTheme = 'xmas' | 'japan' | 'travel' | 'beach' | 'birthday' | 'party' | 'sport' | 'plain';
+
+export interface Countdown {
+  id: string;
+  title: string;
+  day: string; // YYYY-MM-DD
+  theme: CountdownTheme;
+  note: string | null;
+  show_days: number; // start showing this many days before
+  created_at: string;
+}
+
 export interface FamilyData {
   settings: Settings;
   kids: Kid[];
@@ -142,6 +154,7 @@ export interface FamilyData {
   techApprovals?: TechApproval[];
   events?: CalEvent[];
   payOverrides?: PayOverride[];
+  countdowns?: Countdown[];
 }
 
 export const DEFAULT_SETTINGS: Settings = {

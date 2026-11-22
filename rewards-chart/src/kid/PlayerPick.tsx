@@ -98,7 +98,7 @@ export function PlayerPick() {
         })}
       </div>
 
-      <Countdowns today={local.day} />
+      <Countdowns countdowns={data.countdowns ?? []} today={local.day} />
 
       <WeekCalendar events={data.events ?? []} kids={data.kids} today={local.day} />
 
