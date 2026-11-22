@@ -560,6 +560,32 @@ button:disabled { cursor: default; }
 .cd-date { font-size: 13px; font-weight: 800; color: var(--muted); }
 .cd-chip { align-self: flex-start; font-size: 12px; font-weight: 900; letter-spacing: 0.06em; padding: 5px 10px; border-radius: 999px; background: var(--cd); color: #1d1a52; }
 
+.countdown-tile.themed { position: relative; overflow: hidden; }
+.countdown-tile.themed > :not(.cd-decor) { position: relative; z-index: 1; }
+.cd-decor { position: absolute; inset: 0; width: 100%; height: 100%; z-index: 0; pointer-events: none; }
+.countdown-tile.themed .cd-icon { background: rgba(0, 0, 0, 0.22); }
+.countdown-tile.themed .cd-date { color: rgba(255, 255, 255, 0.85); }
+/* Christmas A: festive red with snowflakes, gold ring, candy-cane edge */
+.xmas-a { background: linear-gradient(140deg, #8E1023, #C4162E 55%, #8E1023) !important; border: 0 !important; box-shadow: 0 6px 0 #5A0A16 !important; }
+.xmas-a::after { content: ''; position: absolute; left: 0; right: 0; bottom: 0; height: 10px; z-index: 1; background: repeating-linear-gradient(135deg, #fff 0 10px, #E5484D 10px 20px); }
+.xmas-a .cd-ring circle:last-child { stroke: #FFC94A; }
+.xmas-a .cd-ring circle:first-child { stroke: rgba(0, 0, 0, 0.28); }
+.xmas-a .cd-chip { background: #2FBF4F; color: #08310f; }
+/* Christmas B: snowy night scene */
+.xmas-b { background: linear-gradient(180deg, #0B1640, #1C2D6B) !important; border-color: #2FBF4F !important; box-shadow: 0 6px 0 #146b2a !important; }
+.xmas-b .cd-ring circle:last-child { stroke: #FF5A5A; }
+.xmas-b .cd-chip { background: #2FBF4F; color: #08310f; }
+/* Japan A: night sky, rising sun, falling sakura */
+.japan-a { background: linear-gradient(160deg, #150F3D, #2E1A5E) !important; border-color: #FF8CC0 !important; box-shadow: 0 6px 0 #8E2E5C !important; }
+.japan-a .cd-ring circle:last-child { stroke: #FF8CC0; }
+.japan-a .cd-chip { background: #E5484D; color: #fff; }
+/* Japan B: sunset over Mt Fuji with a cherry blossom branch */
+.japan-b { background: linear-gradient(180deg, #FF8A5B, #E0559A 55%, #6A3D9A) !important; border-color: #FFD1E3 !important; box-shadow: 0 6px 0 #6A3D9A !important; }
+.japan-b .cd-ring circle:first-child { stroke: rgba(40, 20, 70, 0.35); }
+.japan-b .cd-ring circle:last-child { stroke: #fff; }
+.japan-b .cd-unit, .japan-b .cd-date { color: #FFF1F6; }
+.japan-b .cd-chip { background: #fff; color: #A3245E; }
+
 /* PIN pad */
 .pin-screen { min-height: 100vh; min-height: 100dvh; display: flex; flex-direction: column; align-items: center; justify-content: center; gap: 22px; padding: 24px; }
 .pin-screen h1 { margin: 0; font-family: var(--display); font-weight: 400; font-size: 40px; }
